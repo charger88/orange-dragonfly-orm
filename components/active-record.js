@@ -258,7 +258,7 @@ class ActiveRecord {
       delete data[this.constructor.id_key]
     }
     if (this.id) {
-      this.constructor.query().whereAnd(this.constructor.id_key, this.id).update(data)
+      this.constructor.updateQuery().whereAnd(this.constructor.id_key, this.id).update(data)
     } else {
       this.id = await this.constructor.insertQuery().insertOne(data)
     }
