@@ -1,0 +1,33 @@
+{
+  "name": "orange-dragonfly-db",
+  "version": "0.5.0",
+  "description": "Database connection and SQL queries object models",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/charger88/orange-dragonfly-db.git"
+  },
+  "keywords": [
+    "database",
+    "object",
+    "sql",
+    "query"
+  ],
+  "author": {
+    "name": "Michael Kelner",
+    "email": "mikhail.kelner@gmail.com",
+    "url": "https://michaelkelner.com/"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/charger88/orange-dragonfly-db/issues"
+  },
+  "homepage": "https://github.com/charger88/orange-dragonfly-db#readme",
+  "devDependencies": {
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "jest": "^25.1.0"
+  }
+}

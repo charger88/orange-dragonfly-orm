@@ -1,0 +1,7 @@
+{
+  "name": "orange-dragonfly-orm-example",
+  "private": true,
+  "devDependencies": {
+    "mysql": "^2.18.1"
+  }
+}
