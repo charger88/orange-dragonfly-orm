@@ -1,4 +1,4 @@
-# Orange Dragonfly DB
+# Orange Dragonfly ORM
 
 One day Orange Dragonfly will become a NodeJS framework. For now I'm starting to publish its components.
 
