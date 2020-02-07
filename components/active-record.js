@@ -260,7 +260,7 @@ class ActiveRecord {
     if (this.id) {
       this.constructor.query().whereAnd(this.constructor.id_key, this.id).update(data)
     } else {
-      this.id = await this.constructor.insertQuery().insert(data)
+      this.id = await this.constructor.insertQuery().insertOne(data)
     }
     await this._postSave()
     return this
