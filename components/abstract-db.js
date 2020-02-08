@@ -32,6 +32,60 @@ class AbstractDB {
   }
 
   /**
+   * Executes functionality (async function) inside transaction
+   * @param functionality
+   * @return {Promise<*>}
+   */
+  async transaction (functionality) {
+    await this.beginTransaction();
+    let res = null;
+    try {
+      res = await functionality();
+      await this.commitTransaction();
+    } catch (e) {
+      await this.rollbackTransaction();
+      throw e;
+    }
+    return res;
+  }
+
+  /**
+   * Begin transaction
+   * @return {Promise<any>}
+   */
+  beginTransaction () {
+    return new Promise((resolve, reject) => {
+      this.getConnection().then(c => {
+        c.beginTransaction((err, result) => err ? reject(err) : resolve(result));
+      }).catch(reject);
+    });
+  }
+
+  /**
+   * Commit transaction
+   * @return {Promise<any>}
+   */
+  commitTransaction () {
+    return new Promise((resolve, reject) => {
+      this.getConnection().then(c => {
+        c.commit((err, result) => err ? c.rollback(() => reject(err)) : resolve(result));
+      }).catch(reject);
+    });
+  }
+
+  /**
+   * Rollback transaction
+   * @return {Promise<any>}
+   */
+  rollbackTransaction () {
+    return new Promise((resolve, reject) => {
+      this.getConnection().then(c => {
+        c.rollback((err, result) => err ? reject(err) : resolve(result));
+      }).catch(reject);
+    });
+  }
+
+  /**
    * Run SQL query
    * @param sql
    * @param params

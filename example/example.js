@@ -39,7 +39,16 @@ const run = async () => {
     }
   }
   console.log(`Total models is DB: ${await CarModel.selectQuery().total()}`)
-  return true
+  try {
+    await ORM.AbstractQuery.db.transaction(async () => {
+      await (new Brand({'brand_name': 'Mercury'})).save();
+      console.log(`Brands number inside the transaction: ${(await Brand.all()).length}`)
+      throw new Error('Oops');
+    });
+  } catch (e) {} finally {
+    console.log(`Brands number outside of the transaction after rollback: ${(await Brand.all()).length}`)
+  }
+  return true;
 }
 
 if (process.argv.length === 6) {
