@@ -240,9 +240,13 @@ class ActiveRecord {
 
   /**
    * Saves object
+   * @param data
    * @returns {Promise<ActiveRecord>}
    */
-  async save () {
+  async save (data = null) {
+    if (data) {
+      this.data = Object.assign(this.data, data)
+    }
     await this._preSave()
     if (this.constructor.special_fields.includes('updated_at')) {
       this.data['updated_at'] = this.constructor._now()
@@ -250,7 +254,7 @@ class ActiveRecord {
     if (this.constructor.special_fields.includes('created_at') && !this.id) {
       this.data['created_at'] = this.constructor._now()
     }
-    const data = Object.assign({}, this.data)
+    data = Object.assign({}, this.data)
     Object.keys(data).filter(k => (k[0] === ':')).forEach(k => {
       delete data[k]
     })
