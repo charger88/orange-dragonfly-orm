@@ -9,6 +9,15 @@ test('select-simple', () => {
   expect(q.params).toEqual(data)
 })
 
+test('select-distinct', () => {
+  const q = (new SelectQuery('users'))
+    .buildRawSQL([{
+      'field': 'email',
+      'distinct': true
+    }])
+  expect(q.sql).toBe('SELECT DISTINCT users.email FROM users')
+})
+
 test('select-total', () => {
   const data = ['ronald']
   const q = (new SelectQuery('users'))

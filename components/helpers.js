@@ -37,18 +37,24 @@ class Helpers {
       field = field.toString()
     }
     if (allow_function && (typeof field === 'object')) {
+      let v = ""
+      const $distinct = field.hasOwnProperty('distinct') && field['distinct'] ? 'DISTINCT ' : ''
       if (field.hasOwnProperty('function')) {
-        let v = this.functionName(field['function'])
+        v += this.functionName(field['function'])
         if (field.hasOwnProperty('arguments')) {
           v += `(${field['arguments'].map(f => this.fieldName(f, table)).join(', ')})`
+        } else if (field.hasOwnProperty('field')) {
+          v += `(${$distinct}${this.fieldName(field['field'], table)})`
         }
-        if (field.hasOwnProperty('as')) {
-          v += ` as ${this.fieldName(field['as'])}`
-        }
-        return v
+      } else if (field.hasOwnProperty('field')) {
+        v += `${$distinct}${this.fieldName(field['field'], table)}`
       } else {
-        throw new Error('Incorrect field - object is provided, but "function" is missing.')
+        throw new Error('Incorrect field - object is provided, but "function" and "field" are missing.')
       }
+      if (field.hasOwnProperty('as')) {
+        v += ` as ${this.fieldName(field['as'])}`
+      }
+      return v
     }
     if (allow_number) {
       if ((typeof field === 'number') || ((typeof field === 'string') && field.match('^([0-9]+)$'))) {
