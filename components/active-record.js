@@ -245,19 +245,19 @@ class ActiveRecord {
    */
   async save (data = null) {
     if (data) {
+      Object.keys(data).filter(k => (k[0] === ':')).forEach(k => {
+        delete data[k]
+      })
       this.data = Object.assign(this.data, data)
     }
-    await this._preSave()
     if (this.constructor.special_fields.includes('updated_at')) {
       this.data['updated_at'] = this.constructor._now()
     }
     if (this.constructor.special_fields.includes('created_at') && !this.id) {
       this.data['created_at'] = this.constructor._now()
     }
+    await this._preSave()
     data = Object.assign({}, this.data)
-    Object.keys(data).filter(k => (k[0] === ':')).forEach(k => {
-      delete data[k]
-    })
     if (data.hasOwnProperty(this.constructor.id_key)) {
       delete data[this.constructor.id_key]
     }
