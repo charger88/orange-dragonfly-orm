@@ -68,8 +68,8 @@ class QueryClause {
    */
   build (params) {
     let expression
-    const a = this.buildOperand(this.a, params)
-    const b = this.buildOperand(this.b, params)
+    let a = this.buildOperand(this.a, params)
+    let b = this.buildOperand(this.b, params)
     let operator = this.operator
     if (b === 'NULL') {
       if (['=', 'IS'].includes(operator)) {
@@ -90,6 +90,17 @@ class QueryClause {
     }
     if (!['IN', 'NOT IN', 'IS', 'IS NOT', '=', '!=', '<>', '>', '<', '>=', '<=', 'LIKE'].includes(operator)) {
       throw new Error(`Incorrect operator "${operator}"`)
+    }
+    if (b === '()') {
+      if (operator === 'IN') {
+        a = '1'
+        b = '1'
+        operator = '!='
+      } else if (operator === 'NOT IN') {
+        a = '1'
+        b = '1'
+        operator = '='
+      }
     }
     expression = `${a} ${operator} ${b}`
     return expression

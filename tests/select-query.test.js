@@ -9,6 +9,15 @@ test('select-simple', () => {
   expect(q.params).toEqual(data)
 })
 
+test('select-empty-in', () => {
+  const data = []
+  const q = (new SelectQuery('users'))
+    .whereAnd('username', data)
+    .buildRawSQL()
+  expect(q.sql).toBe('SELECT * FROM users WHERE 1 != 1')
+  expect(q.params).toEqual(data)
+})
+
 test('select-distinct', () => {
   const q = (new SelectQuery('users'))
     .buildRawSQL([{
