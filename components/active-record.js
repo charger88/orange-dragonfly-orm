@@ -158,7 +158,7 @@ class ActiveRecord {
    * @returns {Promise<Array>}
    */
   static async loadRelations (objects, relations=null) {
-    for (let rel_name of (relations || this.available_relations)) {
+    for (let rel_name of (relations || Object.keys(this.available_relations))) {
       const res = await this.available_relations[rel_name].selectForMultiple(objects)
       for (let object of objects) {
         object.relations[rel_name] = res[object.id]
