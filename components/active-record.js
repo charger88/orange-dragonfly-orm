@@ -246,10 +246,10 @@ class ActiveRecord {
   async save (data = null) {
     if (data) {
       this.data = Object.assign(this.data, data)
-      Object.keys(this.data).filter(k => (k[0] === ':')).forEach(k => {
-        delete this.data[k]
-      })
     }
+    Object.keys(this.data).filter(k => (k[0] === ':')).forEach(k => {
+      delete this.data[k]
+    })
     if (this.constructor.special_fields.includes('updated_at')) {
       this.data['updated_at'] = this.constructor._now()
     }
