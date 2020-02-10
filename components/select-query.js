@@ -17,14 +17,12 @@ class SelectQuery extends FilteredQuery {
    * @param operator
    * @return {SelectQuery}
    */
-  joinTable (join_type, table_name, key = null, foreign_key = null, operator = '=') {
+  joinTable (join_type, table_name, key, foreign_key, operator = '=') {
     const table = Helpers.tableName(table_name)
     const jt = {join_type, table, 'condition': null}
-    if (key && foreign_key) {
-      const a = {'type': 'field', 'value': Helpers.fieldName(key, this.table)}
-      const b = {'type': 'field', 'value': Helpers.fieldName(foreign_key, table)}
-      jt.clause = new QueryClause(a, b, operator)
-    }
+    const a = {'type': 'field', 'value': Helpers.fieldName(key, this.table)}
+    const b = {'type': 'field', 'value': Helpers.fieldName(foreign_key, table)}
+    jt.clause = new QueryClause(a, b, operator)
     this.joined_tables.push(jt)
     return this
   }
