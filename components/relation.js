@@ -101,7 +101,7 @@ class Relation {
    * @return {Promise<*>}
    */
   async selectForOne(object) {
-    if (!object.id) throw new Error('Relation can\'t be loaded for not-saved object')
+    if (!object.id && !['parent'].includes(this.mode)) throw new Error('This type of relation can\'t be loaded for not-saved object')
     const data = await this.selectForMultiple([object])
     return data[object.id]
   }
