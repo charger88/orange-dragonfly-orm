@@ -256,6 +256,9 @@ class ActiveRecord {
     if (this.constructor.special_fields.includes('created_at') && !this.id) {
       this.data['created_at'] = this.constructor._now()
     }
+    if (this.constructor.special_fields.includes('deleted_at') && !this.id) {
+      this.data['deleted_at'] = null
+    }
     await this._preSave()
     data = Object.assign({}, this.data)
     if (data.hasOwnProperty(this.constructor.id_key)) {
