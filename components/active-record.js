@@ -158,8 +158,31 @@ class ActiveRecord {
    * @returns {Promise<Array>}
    */
   static async loadRelations (objects, relations=null) {
-    for (let rel_name of (relations || Object.keys(this.available_relations))) {
+    let sub_relations = {}
+    if (relations === null){
+      relations = Object.keys(this.available_relations)
+    } else {
+      for (let rel_name of relations) {
+        if (rel_name.includes(':')) {
+          rel_name = rel_name.split(':')
+          if (!sub_relations.hasOwnProperty(rel_name[0])) {
+            sub_relations[rel_name[0]] = []
+          }
+          sub_relations[rel_name[0]].push(rel_name.slice(1).join(':'))
+        }
+      }
+      relations = relations.filter(r => {
+        return !r.includes(':')
+      })
+    }
+    for (let rel_name of relations) {
+      if (!this.available_relations.hasOwnProperty(rel_name)) {
+        throw new Error(`Relation ${rel_name} does not exist in model ${this.name}`)
+      }
       const res = await this.available_relations[rel_name].selectForMultiple(objects)
+      if (sub_relations.hasOwnProperty(rel_name)) {
+        await this.available_relations[rel_name].b.loadRelations(Object.values(res), sub_relations[rel_name])
+      }
       for (let object of objects) {
         object.relations[rel_name] = res[object.id]
       }
