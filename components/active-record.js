@@ -181,7 +181,7 @@ class ActiveRecord {
       }
       const res = await this.available_relations[rel_name].selectForMultiple(objects)
       if (sub_relations.hasOwnProperty(rel_name)) {
-        await this.available_relations[rel_name].b.loadRelations(Object.values(res), sub_relations[rel_name])
+        await this.available_relations[rel_name].b.loadRelations(Object.values(res).filter(r => r !== null), sub_relations[rel_name])
       }
       for (let object of objects) {
         object.relations[rel_name] = res[object.id]
