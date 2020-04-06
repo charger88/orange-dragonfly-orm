@@ -135,7 +135,7 @@ class SelectQuery extends FilteredQuery {
     const res = await this.select({
       'fields': [{
         'function': 'COUNT',
-        'arguments': ['id'],
+        'arguments': ['*'],
         'as': 'total',
       }]
     })
