@@ -131,11 +131,11 @@ class SelectQuery extends FilteredQuery {
    * Counts total number of records in DB
    * @return {Promise<number>}
    */
-  async total () {
+  async total (id_key = null) {
     const res = await this.select({
       'fields': [{
         'function': 'COUNT',
-        'arguments': ['*'],
+        'arguments': [id_key ? id_key : (this.item_class ? this.item_class.id_key : 'id')],
         'as': 'total',
       }]
     })
