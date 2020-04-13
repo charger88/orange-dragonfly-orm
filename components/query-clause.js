@@ -49,7 +49,7 @@ class QueryClause {
       if (operand.value === null) {
         return 'NULL'
       } else if (Array.isArray(operand.value)) {
-        const q = operand.value.map(v => {
+        const q = [... new Set(operand.value)].map(v => {
           params.push(v)
           return '?'
         }).join(', ')

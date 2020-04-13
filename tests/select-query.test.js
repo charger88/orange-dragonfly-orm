@@ -70,10 +70,19 @@ test('select-where-2', () => {
 test('select-in', () => {
   const data = ['richard', 'george.w']
   const q = (new SelectQuery('users'))
-    .whereAnd('username', [data[0], data[1]])
+    .whereAnd('username', data)
     .buildRawSQL()
   expect(q.sql).toBe('SELECT * FROM users WHERE users.username IN (?, ?)')
-  expect(q.params).toEqual(data)
+  expect(q.params).toEqual([data[0], data[1]])
+})
+
+test('select-in-duplications', () => {
+  const data = ['richard', 'george.w', 'george.w', 'george.w', 'richard']
+  const q = (new SelectQuery('users'))
+    .whereAnd('username', data)
+    .buildRawSQL()
+  expect(q.sql).toBe('SELECT * FROM users WHERE users.username IN (?, ?)')
+  expect(q.params).toEqual([data[0], data[1]])
 })
 
 test('select-no-where-limit-offset', () => {
