@@ -27,6 +27,14 @@ test('select-distinct', () => {
   expect(q.sql).toBe('SELECT DISTINCT users.email FROM users')
 })
 
+test('select-distinct', () => {
+  const q = (new SelectQuery('users'))
+    .buildRawSQL([{
+      'raw': '2 + 2'
+    }])
+  expect(q.sql).toBe('SELECT 2 + 2 FROM users')
+})
+
 test('select-total', () => {
   const data = ['ronald']
   const q = (new SelectQuery('users'))

@@ -39,7 +39,9 @@ class Helpers {
     if (allow_function && (typeof field === 'object')) {
       let v = ""
       const $distinct = field.hasOwnProperty('distinct') && field['distinct'] ? 'DISTINCT ' : ''
-      if (field.hasOwnProperty('function')) {
+      if (field.hasOwnProperty('raw')) {
+        v = field['raw']
+      } else if (field.hasOwnProperty('function')) {
         v += this.functionName(field['function'])
         if (field.hasOwnProperty('arguments')) {
           v += `(${field['arguments'].map(f => this.fieldName(f, table)).join(', ')})`
