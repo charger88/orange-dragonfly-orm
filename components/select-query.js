@@ -142,6 +142,18 @@ class SelectQuery extends FilteredQuery {
     return res[0]['total']
   }
 
+  /**
+   * Returns if any records exist for the defined clauses
+   * @return {Promise<boolean>}
+   */
+  async exists (id_key = null) {
+    const res = await this.select({
+      'fields': [id_key ? id_key : (this.item_class ? this.item_class.id_key : 'id')],
+      'limit': 1
+    })
+    return !!res.length
+  }
+
 }
 
 module.exports = SelectQuery

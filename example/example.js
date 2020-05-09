@@ -38,7 +38,9 @@ const run = async () => {
       console.log(`* ${model.data['model_name']}: ${(await model.rel('colors')).map(c => c.data['color_name']).join(', ')}`)
     }
   }
-  console.log(`Total models is DB: ${await CarModel.selectQuery().total()}`)
+  if (await CarModel.selectQuery().exists()) {
+    console.log(`Total models is DB: ${await CarModel.selectQuery().total()}`)
+  }
   try {
     await ORM.AbstractQuery.db.transaction(async () => {
       await (new Brand({'brand_name': 'Mercury'})).save();
