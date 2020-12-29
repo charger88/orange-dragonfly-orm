@@ -70,7 +70,7 @@ class SelectQuery extends FilteredQuery {
    */
   _buildGroupSQL () {
     if (!this.group_by.length) return ''
-    return `GROUP BY ${this.group_by.map(g => Helpers.fieldName(g, this.table)).join(', ')}`
+    return `GROUP BY ${this.group_by.map(g => Helpers.fieldName(g, this.table, true)).join(', ')}`
   }
 
   /**

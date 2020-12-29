@@ -118,6 +118,15 @@ test('select-group', () => {
   expect(q.params).toEqual(data)
 })
 
+test('select-group-by-number', () => {
+  const data = []
+  const q = (new SelectQuery('users'))
+    .groupBy(1)
+    .buildRawSQL(['home_state', {'function': 'COUNT', 'arguments': ['id']}], null, 0, {'2': true})
+  expect(q.sql).toBe('SELECT users.home_state, COUNT(users.id) FROM users GROUP BY 1 ORDER BY 2 DESC')
+  expect(q.params).toEqual(data)
+})
+
 test('select-join-order', () => {
   const data = [true, 'spouse']
   const q = (new SelectQuery('users'))
