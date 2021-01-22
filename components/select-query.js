@@ -15,6 +15,7 @@ class SelectQuery extends FilteredQuery {
    * @param key
    * @param foreign_key
    * @param operator
+   * @param alias
    * @return {SelectQuery}
    */
   joinTable (join_type, table_name, key, foreign_key, operator = '=', alias = null) {
@@ -115,7 +116,8 @@ class SelectQuery extends FilteredQuery {
       options.order || {},
     )
     const res = await this.constructor.runRawSQL(query.sql, query.params)
-    return (fields === '*') && this.item_class ? res.map(record => new this.item_class(record)) : res
+    const return_objects = this.item_class && ((fields === '*') || (Array.isArray(fields) && (fields.length === 1) && (fields[0] === `${this.table}.*`)));
+    return return_objects ? res.map(record => new this.item_class(record)) : res
   }
 
   /**
