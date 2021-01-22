@@ -24,10 +24,11 @@ class QueryClauseGroup {
    * Adds "AND (field = ?)" clause
    * @param field
    * @param value
+   * @param operator
    * @return {*}
    */
-  and (field, value) {
-    return this.exp(field, value, '=', false)
+  and (field, value, operator = '=') {
+    return this.exp(field, value, operator, false)
   }
 
   /**
@@ -44,10 +45,11 @@ class QueryClauseGroup {
    * Adds "OR (field = ?)" clause
    * @param field
    * @param value
+   * @param operator
    * @return {*}
    */
-  or (field, value) {
-    return this.exp(field, value, '=', true)
+  or (field, value, operator = '=') {
+    return this.exp(field, value, operator, true)
   }
 
   /**
