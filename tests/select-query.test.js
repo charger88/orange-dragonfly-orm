@@ -137,3 +137,14 @@ test('select-join-order', () => {
   expect(q.sql).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives ON users.id = relatives.user_id WHERE users.admin = ? AND relatives.relation = ? ORDER BY users.year DESC, relatives.id ASC')
   expect(q.params).toEqual(data)
 })
+
+test('select-join-alias', () => {
+  const data = [true, 'spouse']
+  const q = (new SelectQuery('users'))
+    .joinTable('LEFT', 'relatives', `id`, 'user_id', '=', 'my_table')
+    .whereAnd('admin', data[0])
+    .whereAnd('relatives.relation', data[1])
+    .buildRawSQL(['name', 'relatives.name'])
+  expect(q.sql).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives my_table ON users.id = relatives.user_id WHERE users.admin = ? AND relatives.relation = ?')
+  expect(q.params).toEqual(data)
+})

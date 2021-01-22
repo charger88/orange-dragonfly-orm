@@ -17,9 +17,9 @@ class SelectQuery extends FilteredQuery {
    * @param operator
    * @return {SelectQuery}
    */
-  joinTable (join_type, table_name, key, foreign_key, operator = '=') {
+  joinTable (join_type, table_name, key, foreign_key, operator = '=', alias = null) {
     const table = Helpers.tableName(table_name)
-    const jt = {join_type, table, 'condition': null}
+    const jt = {join_type, table, alias, 'condition': null}
     const a = {'type': 'field', 'value': Helpers.fieldName(key, this.table)}
     const b = {'type': 'field', 'value': Helpers.fieldName(foreign_key, table)}
     jt.clause = new QueryClause(a, b, operator)
@@ -54,6 +54,9 @@ class SelectQuery extends FilteredQuery {
         }
       }
       jt_sql += ` JOIN ${Helpers.tableName(jt.table)} `
+      if (jt.alias) {
+        jt_sql += `${Helpers.tableName(jt.alias)} `
+      }
       if (jt.clause) {
         const p = []
         jt_sql += `ON ${jt.clause.build(p)} `
