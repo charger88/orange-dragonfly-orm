@@ -7,6 +7,10 @@ const DeleteQuery = require('./components/delete-query')
 const ActiveRecord = require('./components/active-record')
 const Relation = require('./components/relation')
 
+const transaction = async (functionality) => {
+  return await AbstractQuery.db.transaction(functionality)
+}
+
 module.exports = {
-  AbstractDB, AbstractQuery, InsertQuery, SelectQuery, UpdateQuery, DeleteQuery, ActiveRecord, Relation
+  AbstractDB, AbstractQuery, InsertQuery, SelectQuery, UpdateQuery, DeleteQuery, ActiveRecord, Relation, transaction
 }
