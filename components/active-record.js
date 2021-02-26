@@ -230,11 +230,11 @@ class ActiveRecord {
    * @param name
    * @returns {Promise<*>}
    */
-  async rel (name) {
+  async rel (name, reload = false) {
     if (!this.constructor.available_relations.hasOwnProperty(name)) {
       throw new Error(`Relation "${name}" is not defined in class "${this.constructor.name}"`)
     }
-    if (!this.relations.hasOwnProperty(name)) {
+    if (reload || !this.relations.hasOwnProperty(name)) {
       this.relations[name] = await this.constructor.available_relations[name].selectForOne(this)
     }
     return this.relations[name]
