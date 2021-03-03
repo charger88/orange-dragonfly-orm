@@ -12,6 +12,9 @@ class Relation {
   via_a_key = null
   via_b_key = null
 
+  specify_function = null
+  select_params = {}
+
   /**
    * @param mode
    * @param a
@@ -169,7 +172,7 @@ class Relation {
    * @private
    */
   async _getData(objects) {
-    const data = await this._getDataBuildQuery(objects.map(obj => obj.data[this._a_key_by_mode])).select()
+    const data = await this._getDataBuildQuery(objects.map(obj => obj.data[this._a_key_by_mode])).select(this.select_params)
     return this._getDataResult(data, objects)
   }
 
@@ -178,7 +181,9 @@ class Relation {
    * @return {FilteredQuery}
    */
   _getDataBuildQuery(ids) {
-    return this.b.selectQuery().whereAnd(this._b_key_by_mode, ids)
+    const q = this.b.selectQuery().whereAnd(this._b_key_by_mode, ids)
+    this.specify_function && this.specify_function(q)
+    return q
   }
 
   /**
@@ -206,6 +211,16 @@ class Relation {
         : (array_mode ? [] : null)
     }
     return res
+  }
+
+  specify(callback) {
+    this.specify_function = callback
+    return this
+  }
+
+  params(params) {
+    this.select_params = params
+    return this
   }
 
 }

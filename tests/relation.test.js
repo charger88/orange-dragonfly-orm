@@ -6,6 +6,7 @@ class Brand extends ActiveRecord {
   static get available_relations () {
     return {
       'car-models': Relation.children(this, this.model('CarModel')),
+      'car-models-not-empty': Relation.children(this, this.model('CarModel')).specify(query => query.where('model_name', '', '!=')),
       'sub-divisions': Relation.children(this, this, null, 'parent_brand_id'),
       'parent-division': Relation.parent(this, this, 'parent_brand_id')
     }
@@ -42,6 +43,16 @@ test('relation-children', () => {
   const q = rel._getDataBuildQuery(data).buildRawSQL()
   expect(q.sql).toBe('SELECT * FROM car_model WHERE car_model.brand_id IN (?)')
   expect(q.params).toEqual(data)
+})
+
+test('relation-children-with-condition', () => {
+  const data = [7]
+  const rel = Brand.available_relations['car-models-not-empty']
+  expect(rel._a_key_by_mode).toBe('id')
+  expect(rel._b_key_by_mode).toBe('brand_id')
+  const q = rel._getDataBuildQuery(data).buildRawSQL()
+  expect(q.sql).toBe('SELECT * FROM car_model WHERE car_model.brand_id IN (?) AND car_model.model_name != ?')
+  expect(q.params).toEqual(data.concat([""]))
 })
 
 test('relation-children-same-table', () => {
