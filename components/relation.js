@@ -172,7 +172,9 @@ class Relation {
    * @private
    */
   async _getData(objects) {
-    const data = await this._getDataBuildQuery(objects.map(obj => obj.data[this._a_key_by_mode])).select(this.select_params)
+    const params = Object.assign({}, this.select_params)
+    if (['child', 'parent'].includes(this.mode)) params.limit = 1
+    const data = await this._getDataBuildQuery(objects.map(obj => obj.data[this._a_key_by_mode])).select(params)
     return this._getDataResult(data, objects)
   }
 
