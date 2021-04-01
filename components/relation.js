@@ -172,9 +172,7 @@ class Relation {
    * @private
    */
   async _getData(objects) {
-    const params = Object.assign({}, this.select_params)
-    if (['child', 'parent'].includes(this.mode)) params.limit = 1
-    const data = await this._getDataBuildQuery(objects.map(obj => obj.data[this._a_key_by_mode])).select(params)
+    const data = await this._getDataBuildQuery(objects.map(obj => obj.data[this._a_key_by_mode])).select(this.select_params)
     return this._getDataResult(data, objects)
   }
 
@@ -203,7 +201,9 @@ class Relation {
         }
         data2[r.data[this._b_key_by_mode]].push(r)
       } else {
-        data2[r.data[this._b_key_by_mode]] = r
+        if (!data2.hasOwnProperty(r.data[this._b_key_by_mode])) {
+          data2[r.data[this._b_key_by_mode]] = r
+        }
       }
     }
     const res = {}
