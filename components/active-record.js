@@ -225,10 +225,17 @@ class ActiveRecord {
     this.data[this.constructor.id_key] = value
   }
 
+  /**
+   * Returns relation object
+   * @param name
+   * @return {*}
+   * @private
+   */
   _get_relation_object (name) {
     if (!this.constructor.available_relations.hasOwnProperty(name)) {
       throw new Error(`Relation "${name}" is not defined in class "${this.constructor.name}"`)
     }
+    return this.constructor.available_relations[name]
   }
 
   /**
