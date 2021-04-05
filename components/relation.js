@@ -12,7 +12,7 @@ class Relation {
   via_a_key = null
   via_b_key = null
 
-  specify_function = null
+  specify_functions = []
   select_params = {}
 
   /**
@@ -28,6 +28,17 @@ class Relation {
     this.b = b
     this.a_key = a_key
     this.b_key = b_key
+  }
+
+  /**
+   * Clones object
+   * @return Relation
+   */
+  clone () {
+    const rel_obj = new this.constructor(this.mode, this.a, this.b, this.a_key, this.b_key)
+    rel_obj.specify_functions = [...this.specify_functions]
+    rel_obj.select_params = Object.assign({}, this.select_params)
+    return rel_obj
   }
 
   /**
@@ -182,7 +193,9 @@ class Relation {
    */
   _getDataBuildQuery(ids) {
     const q = this.b.selectQuery().whereAnd(this._b_key_by_mode, ids)
-    this.specify_function && this.specify_function(q)
+    for (let sf of this.specify_functions) {
+      sf(q)
+    }
     return q
   }
 
@@ -215,13 +228,13 @@ class Relation {
     return res
   }
 
-  specify(callback) {
-    this.specify_function = callback
+  specify(callback, merge = false) {
+    this.specify_functions = merge ? this.specify_functions.concat(callback) : [callback]
     return this
   }
 
-  params(params) {
-    this.select_params = params
+  params(params, merge = false) {
+    this.select_params = merge ? Object.assign(this.select_params, params) : params
     return this
   }
 

@@ -225,19 +225,37 @@ class ActiveRecord {
     this.data[this.constructor.id_key] = value
   }
 
-  /**
-   * Returns value of relation described in "available_relations" (model object, null or array of objects)
-   * @param name
-   * @returns {Promise<*>}
-   */
-  async rel (name, reload = false) {
+  _get_relation_object (name) {
     if (!this.constructor.available_relations.hasOwnProperty(name)) {
       throw new Error(`Relation "${name}" is not defined in class "${this.constructor.name}"`)
     }
+  }
+
+  /**
+   * Returns value of relation described in "available_relations" (model object, null or array of objects)
+   * @param name
+   * @param reload
+   * @returns {Promise<*>}
+   */
+  async rel (name, reload = false) {
     if (reload || !this.relations.hasOwnProperty(name)) {
-      this.relations[name] = await this.constructor.available_relations[name].selectForOne(this)
+      this.relations[name] = await (this._get_relation_object(name)).selectForOne(this)
     }
     return this.relations[name]
+  }
+
+  /**
+   * Returns value of relation described in "available_relations" (model object, null or array of objects)
+   * @param name
+   * @param {function} custom_specify_function Query modification (where conditions, etc.)
+   * @param {object} custom_select_params Select parameters (order, limit, offset)
+   * @returns {Promise<*>}
+   */
+  async custom_rel_query (name, custom_specify_function = null, custom_select_params = null) {
+    const rel_obj = this._get_relation_object(name).clone()
+    if (custom_specify_function) rel_obj.specify(custom_specify_function, true)
+    if (custom_select_params) rel_obj.params(custom_select_params, true)
+    return await rel_obj.selectForOne(this)
   }
 
   /**

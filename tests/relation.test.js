@@ -55,6 +55,28 @@ test('relation-children-with-condition', () => {
   expect(q.params).toEqual(data.concat([""]))
 })
 
+test('relation-children-with-condition-custom-merge', () => {
+  const data = [7]
+  const rel = Brand.available_relations['car-models-not-empty']
+  expect(rel._a_key_by_mode).toBe('id')
+  expect(rel._b_key_by_mode).toBe('brand_id')
+  rel.specify(q => q.where('id', 0, '>'), true)
+  const q = rel._getDataBuildQuery(data).buildRawSQL()
+  expect(q.sql).toBe('SELECT * FROM car_model WHERE car_model.brand_id IN (?) AND car_model.model_name != ? AND car_model.id > ?')
+  expect(q.params).toEqual(data.concat(["", 0]))
+})
+
+test('relation-children-with-condition-custom-replace', () => {
+  const data = [7]
+  const rel = Brand.available_relations['car-models-not-empty']
+  expect(rel._a_key_by_mode).toBe('id')
+  expect(rel._b_key_by_mode).toBe('brand_id')
+  rel.specify(q => q.where('id', 0, '>'))
+  const q = rel._getDataBuildQuery(data).buildRawSQL()
+  expect(q.sql).toBe('SELECT * FROM car_model WHERE car_model.brand_id IN (?) AND car_model.id > ?')
+  expect(q.params).toEqual(data.concat([0]))
+})
+
 test('relation-children-same-table', () => {
   const data = [7]
   const rel = Brand.available_relations['sub-divisions']
@@ -141,4 +163,18 @@ test('relation-get-independent-data-result', () => {
   expect(res[1]).toEqual([styles[0], styles[1], styles[2]])
   expect(res[2]).toEqual([styles[2], styles[3]])
   expect(res[3]).toEqual([])
+})
+
+test('relation-clone', () => {
+  const rel = CarModel.available_relations['brand']
+  expect(rel._a_key_by_mode).toBe('brand_id')
+  expect(rel._b_key_by_mode).toBe('id')
+  const cloned = rel.clone()
+  expect(cloned._a_key_by_mode).toBe('brand_id')
+  expect(cloned._b_key_by_mode).toBe('id')
+  cloned.specify(q => q.where('id', 0, '>')).params({'limit': 45})
+  expect(rel.specify_functions.length).toBe(0)
+  expect(cloned.specify_functions.length).toBe(1)
+  expect(rel.select_params).toEqual({})
+  expect(cloned.select_params).toEqual({'limit': 45})
 })
