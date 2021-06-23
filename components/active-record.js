@@ -343,11 +343,11 @@ class ActiveRecord {
     await this._preRemove()
     if (this.id) {
       if (hard || !this.constructor.special_fields.includes('deleted_at')) {
-        this.constructor.deleteQuery()
+        await this.constructor.deleteQuery()
           .whereAnd(this.constructor.id_key, this.id)
           .remove()
       } else {
-        this.constructor.updateQuery()
+        await this.constructor.updateQuery()
           .whereAnd(this.constructor.id_key, this.id)
           .update({'deleted_at': this.constructor._now()})
       }
