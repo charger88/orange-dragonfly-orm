@@ -102,6 +102,18 @@ class FilteredQuery extends AbstractQuery {
   }
 
   /**
+   * Returns order direction
+   * @param {boolean|string} value Order direction (true for "DESC", false for "ASC")
+   * @return {string}
+   * @private
+   */
+  static _getOrderDirection(value) {
+    if (typeof value === 'boolean') return value ? 'DESC' : 'ASC';
+    if ((typeof value === 'string') && ['asc', 'desc'].includes(value.toLowerCase())) return value.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+    throw new Error(`Incorrect order value: (${typeof value}) "value"`);
+  }
+
+  /**
    * Builds SQL of the "WHERE" part
    * @param order Object like {"timestamp": true, "id": false} which means "ORDER BY timestamp DESC, id ASC"
    * @return {string}
@@ -112,7 +124,7 @@ class FilteredQuery extends AbstractQuery {
     const fields = Object.keys(order)
     if (!fields.length) return ''
     const sql = fields
-      .map(f => `${Helpers.fieldName(f, this.table, true)} ${order[f] ? 'DESC' : 'ASC'}`)
+      .map(f => `${Helpers.fieldName(f, this.table, true)} ${this.constructor._getOrderDirection(order[f])}`)
       .join(', ')
     return `ORDER BY ${sql}`
   }

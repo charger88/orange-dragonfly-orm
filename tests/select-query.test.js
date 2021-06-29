@@ -109,6 +109,15 @@ test('select-order', () => {
   expect(q.params).toEqual(data)
 })
 
+test('select-order-strings', () => {
+  const data = ['ronald']
+  const q = (new SelectQuery('users'))
+    .whereAnd('username', data[0])
+    .buildRawSQL('*', null, 0, {'year': 'desc', 'id': 'asc'})
+  expect(q.sql).toBe('SELECT * FROM users WHERE users.username = ? ORDER BY users.year DESC, users.id ASC')
+  expect(q.params).toEqual(data)
+})
+
 test('select-group', () => {
   const data = []
   const q = (new SelectQuery('users'))
