@@ -88,7 +88,7 @@ class QueryClause {
         throw new Error(`Array value is incompatible with operator "${operator}"`)
       }
     }
-    if (!['IN', 'NOT IN', 'IS', 'IS NOT', '=', '!=', '<>', '>', '<', '>=', '<=', 'LIKE'].includes(operator)) {
+    if (!['IN', 'NOT IN', 'IS', 'IS NOT', '=', '!=', '<>', '>', '<', '>=', '<=', 'LIKE', '&', '|'].includes(operator)) {
       throw new Error(`Incorrect operator "${operator}"`)
     }
     if (b === '()') {
