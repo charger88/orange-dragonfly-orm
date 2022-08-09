@@ -281,10 +281,11 @@ class ActiveRecord {
 
   /**
    * Callback before saving the object
+   * @param {boolean} is_new Shows if method creates object or updates the existing one
    * @returns {Promise<void>}
    * @private
    */
-  async _preSave () {}
+  async _preSave (is_new = false) {}
 
   /**
    * Saves object
@@ -307,26 +308,28 @@ class ActiveRecord {
     if (this.constructor.special_fields.includes('deleted_at') && !this.id) {
       this.data['deleted_at'] = null
     }
-    await this._preSave()
+	const is_new = !this.id
+    await this._preSave(is_new)
     data = Object.assign({}, this.data)
     if (data.hasOwnProperty(this.constructor.id_key)) {
       delete data[this.constructor.id_key]
     }
-    if (this.id) {
+    if (!is_new) {
       await this.constructor.updateQuery().whereAnd(this.constructor.id_key, this.id).update(data)
     } else {
       this.id = await this.constructor.insertQuery().insertOne(data)
     }
-    await this._postSave()
+    await this._postSave(is_new)
     return this
   }
 
   /**
    * Callback after saving the object
+   * @param {boolean} is_new Shows if method creates object or updates the existing one
    * @returns {Promise<void>}
    * @private
    */
-  async _postSave () {}
+  async _postSave (is_new = false) {}
 
   /**
    * Callback before deleting the object
