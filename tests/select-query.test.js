@@ -161,15 +161,16 @@ test('select-join-alias', () => {
 })
 
 test('select-join-multiple', () => {
+  const SOME_VALUE = 5
   const data = [true, 'spouse']
   const table = 'users'
   const c1 = new QueryClause({'type': 'field', 'value': `${table}.id`}, {'type': 'field', 'value': `relatives.user_id`}, '=', false, table)
-  const c2 = new QueryClause({'type': 'field', 'value': `${table}.id`}, {'type': 'field', 'value': `friends.user_id`}, '=', false, table)
+  const c2 = new QueryClause({'type': 'field', 'value': `${table}.status`}, {'type': 'value', 'value': SOME_VALUE}, '=', false, table)
   const q = (new SelectQuery(table))
     .joinTableCustom('LEFT', 'relatives', new QueryClauseGroup([c1, c2], false, table), 'my_table')
     .whereAnd('admin', data[0])
     .whereAnd('relatives.relation', data[1])
     .buildRawSQL(['name', 'relatives.name'])
-  expect(q.sql).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives my_table ON users.id = relatives.user_id AND users.id = friends.user_id WHERE users.admin = ? AND relatives.relation = ?')
-  expect(q.params).toEqual(data)
+  expect(q.sql).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives my_table ON users.id = relatives.user_id AND users.status = ? WHERE users.admin = ? AND relatives.relation = ?')
+  expect(q.params).toEqual([SOME_VALUE].concat(data))
 })

@@ -56,7 +56,7 @@ class SelectQuery extends FilteredQuery {
    * @return {string}
    * @private
    */
-  _buildJoinSQL () {
+  _buildJoinSQL (params) {
     if (!this.joined_tables.length) {
       return ''
     }
@@ -72,9 +72,7 @@ class SelectQuery extends FilteredQuery {
         jt_sql += `${Helpers.tableName(jt.alias)} `
       }
       if (jt.clause) {
-        const p = []
-        jt_sql += `ON ${jt.clause.build(p, true)}`
-        if (p.length) throw new Error(`Some issue with JOIN expression occurred: ${JSON.stringify(p)}`)
+        jt_sql += `ON ${jt.clause.build(params, true)}`
       }
       return jt_sql
     }).join(' ')
@@ -105,7 +103,7 @@ class SelectQuery extends FilteredQuery {
       ? fields.map(f => Helpers.fieldName(f, this.table, false, true)).join(', ')
       : '*'
     const table_sql = `FROM ${Helpers.tableName(this.table)}`
-    const joins_sql = this._buildJoinSQL()
+    const joins_sql = this._buildJoinSQL(params)
     const where_sql = this._buildWhereSQL(params)
     const group_sql = this._buildGroupSQL()
     const order_sql = this._buildOrderSQL(order)
