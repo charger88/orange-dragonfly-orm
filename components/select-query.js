@@ -1,5 +1,6 @@
 const Helpers = require('./helpers')
 const FilteredQuery = require('./filtered-query')
+const QueryClauseGroup = require('./query-clause-group')
 const QueryClause = require('./query-clause')
 
 class SelectQuery extends FilteredQuery {
@@ -20,11 +21,23 @@ class SelectQuery extends FilteredQuery {
    */
   joinTable (join_type, table_name, key, foreign_key, operator = '=', alias = null) {
     const table = Helpers.tableName(table_name)
-    const jt = {join_type, table, alias, 'condition': null}
     const a = {'type': 'field', 'value': Helpers.fieldName(key, this.table)}
     const b = {'type': 'field', 'value': Helpers.fieldName(foreign_key, table)}
-    jt.clause = new QueryClause(a, b, operator)
-    this.joined_tables.push(jt)
+    const clause = new QueryClauseGroup([new QueryClause(a, b, operator)], false, this.table)
+    return this.joinTableCustom(join_type, table_name, clause, alias)
+  }
+
+  /**
+   * Joins table
+   * @param join_type 'INNER', 'LEFT', 'RIGHT', 'FULL'
+   * @param table_name
+   * @param {QueryClauseGroup} clause
+   * @param alias
+   * @return {SelectQuery}
+   */
+  joinTableCustom (join_type, table_name, clause, alias = null) {
+    const table = Helpers.tableName(table_name)
+    this.joined_tables.push({join_type, table, alias, clause})
     return this
   }
 
@@ -60,7 +73,7 @@ class SelectQuery extends FilteredQuery {
       }
       if (jt.clause) {
         const p = []
-        jt_sql += `ON ${jt.clause.build(p)} `
+        jt_sql += `ON ${jt.clause.build(p, true)}`
         if (p.length) throw new Error(`Some issue with JOIN expression occurred: ${JSON.stringify(p)}`)
       }
       return jt_sql

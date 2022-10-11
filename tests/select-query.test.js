@@ -1,4 +1,6 @@
 const SelectQuery = require('./../components/select-query')
+const QueryClauseGroup = require('./../components/query-clause-group')
+const QueryClause = require('./../components/query-clause')
 
 test('select-simple', () => {
   const data = ['ronald']
@@ -155,5 +157,19 @@ test('select-join-alias', () => {
     .whereAnd('relatives.relation', data[1])
     .buildRawSQL(['name', 'relatives.name'])
   expect(q.sql).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives my_table ON users.id = relatives.user_id WHERE users.admin = ? AND relatives.relation = ?')
+  expect(q.params).toEqual(data)
+})
+
+test('select-join-multiple', () => {
+  const data = [true, 'spouse']
+  const table = 'users'
+  const c1 = new QueryClause({'type': 'field', 'value': `${table}.id`}, {'type': 'field', 'value': `relatives.user_id`}, '=', false, table)
+  const c2 = new QueryClause({'type': 'field', 'value': `${table}.id`}, {'type': 'field', 'value': `friends.user_id`}, '=', false, table)
+  const q = (new SelectQuery(table))
+    .joinTableCustom('LEFT', 'relatives', new QueryClauseGroup([c1, c2], false, table), 'my_table')
+    .whereAnd('admin', data[0])
+    .whereAnd('relatives.relation', data[1])
+    .buildRawSQL(['name', 'relatives.name'])
+  expect(q.sql).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives my_table ON users.id = relatives.user_id AND users.id = friends.user_id WHERE users.admin = ? AND relatives.relation = ?')
   expect(q.params).toEqual(data)
 })

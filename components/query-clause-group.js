@@ -16,6 +16,7 @@ class QueryClauseGroup {
    * @param table
    */
   constructor (clauses, or, table) {
+    this.clauses = clauses
     this.or_logic = !!or
     this.table = Helpers.tableName(table)
   }
@@ -92,12 +93,21 @@ class QueryClauseGroup {
 
   /**
    * @param clause
-   * @return {QueryClauseGroup}
+   * @return {QueryClause}
    * @private
    */
   _add (clause) {
     this.clauses.push(clause)
     return this
+  }
+
+  /**
+   * @param clause
+   * @return {QueryClause}
+   * @private
+   */
+  addClause (clause) {
+    return this._add(clause)
   }
 
   /**
