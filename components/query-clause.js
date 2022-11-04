@@ -1,4 +1,5 @@
 const Helpers = require('./helpers')
+const RawSQL = require('./raw-sql')
 
 /**
  * SQL clause (like "id = 1")
@@ -33,6 +34,9 @@ class QueryClause {
    * @return {*}
    */
   buildOperand (operand, params) {
+    if (operand.value instanceof RawSQL) {
+      return operand.value.SQL
+    }
     if (operand.type === 'field') {
       let table = this.table
       let value = operand.value

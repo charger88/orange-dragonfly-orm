@@ -1,5 +1,6 @@
 const Helpers = require('./helpers')
 const FilteredQuery = require('./filtered-query')
+const RawSQL = require('./raw-sql')
 
 /**
  * UPDATE query
@@ -14,6 +15,9 @@ class UpdateQuery extends FilteredQuery {
    */
   _buildUpdateSQL (data, params) {
     return Object.keys(data).map(field => {
+      if (data[field] instanceof RawSQL) {
+        return `${Helpers.fieldName(field, this.table)} = ${data[field].SQL}`
+      }
       params.push(Helpers.prepareValue(data[field]))
       return `${Helpers.fieldName(field, this.table)} = ?`
     }).join(', ')

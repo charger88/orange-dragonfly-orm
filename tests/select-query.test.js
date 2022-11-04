@@ -1,6 +1,7 @@
 const SelectQuery = require('./../components/select-query')
 const QueryClauseGroup = require('./../components/query-clause-group')
 const QueryClause = require('./../components/query-clause')
+const RawSQL = require('../components/raw-sql')
 
 test('select-simple', () => {
   const data = ['ronald']
@@ -173,4 +174,14 @@ test('select-join-multiple', () => {
     .buildRawSQL(['name', 'relatives.name'])
   expect(q.sql).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives my_table ON users.id = relatives.user_id AND users.status = ? WHERE users.admin = ? AND relatives.relation = ?')
   expect(q.params).toEqual([SOME_VALUE].concat(data))
+})
+
+test('select-with-raw-sql', () => {
+  const data = ['ronald']
+  const q = (new SelectQuery('users'))
+    .whereAnd('password', new RawSQL('UNIX_TIMESTAMP()'))
+    .whereAnd(new RawSQL('MD5(users.username)'), data[0])
+    .buildRawSQL()
+  expect(q.sql).toBe('SELECT * FROM users WHERE users.password = UNIX_TIMESTAMP() AND MD5(users.username) = ?')
+  expect(q.params).toEqual(data)
 })
