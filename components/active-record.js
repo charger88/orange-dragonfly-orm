@@ -140,11 +140,15 @@ class ActiveRecord {
   /**
    * Returns is object has unique values
    * @param fields
+   * @param ignore_null
    * @returns {Promise<boolean>}
    */
-  async isUnique (fields) {
+  async isUnique (fields, ignore_null = false) {
     const q = this.constructor.selectQuery()
     for (let field of fields) {
+      if ((field === null) && ignore_null) {
+        return true
+      }
       q.whereAnd(field, this.data[field])
     }
     this.id && q.whereAndNot(this.constructor.id_key, this.id)
