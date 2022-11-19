@@ -146,7 +146,7 @@ class ActiveRecord {
   async isUnique (fields, ignore_null = false) {
     const q = this.constructor.selectQuery()
     for (let field of fields) {
-      if ((field === null) && ignore_null) {
+      if ((this.data[field] === null) && ignore_null) {
         return true
       }
       q.whereAnd(field, this.data[field])
