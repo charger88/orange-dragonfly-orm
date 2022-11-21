@@ -94,14 +94,18 @@ class SelectQuery extends FilteredQuery {
    * @param limit
    * @param offset
    * @param order
+   * @param distinct
    * @return {{sql: string, params: Array}}
    */
-  buildRawSQL (fields = '*', limit = null, offset = 0, order = {}) {
+  buildRawSQL (fields = '*', limit = null, offset = 0, order = {}, distinct = false) {
     Helpers.tableName(this.table)
     const params = []
-    const select_sql = Array.isArray(fields)
+    let select_sql = Array.isArray(fields)
       ? fields.map(f => Helpers.fieldName(f, this.table, false, true)).join(', ')
       : '*'
+    if (distinct) {
+      select_sql = `DISTINCT ${select_sql}`
+    }
     const table_sql = `FROM ${Helpers.tableName(this.table)}`
     const joins_sql = this._buildJoinSQL(params)
     const where_sql = this._buildWhereSQL(params)
@@ -125,6 +129,7 @@ class SelectQuery extends FilteredQuery {
       options.limit || null,
       options.offset || 0,
       options.order || {},
+      !!options.distinct
     )
     const res = await this.constructor.runRawSQL(query.sql, query.params)
     const return_objects = this.item_class && ((fields === '*') || (Array.isArray(fields) && (fields.length === 1) && (fields[0] === `${this.table}.*`)));

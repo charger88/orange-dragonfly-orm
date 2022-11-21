@@ -30,7 +30,13 @@ test('select-distinct', () => {
   expect(q.sql).toBe('SELECT DISTINCT users.email FROM users')
 })
 
-test('select-distinct', () => {
+test('select-distinct-alternate', () => {
+  const q = (new SelectQuery('users'))
+    .buildRawSQL(['email'], null, null, {}, true)
+  expect(q.sql).toBe('SELECT DISTINCT users.email FROM users')
+})
+
+test('select-raw', () => {
   const q = (new SelectQuery('users'))
     .buildRawSQL([{
       'raw': '2 + 2'
