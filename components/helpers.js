@@ -1,4 +1,19 @@
 class Helpers {
+  static get RESERVED_WORDS() {
+    return this._RESERVED_WORDS || []
+  }
+
+  static set RESERVED_WORDS(value) {
+    this._RESERVED_WORDS = value.map(v => v.toUpperCase())
+  }
+
+  static get ESCAPE_CHAR() {
+    return this._NAME_ESCAPE_CHAR || ''
+  }
+
+  static set ESCAPE_CHAR(value) {
+    this._NAME_ESCAPE_CHAR = value
+  }
 
   /**
    * Validates table name
@@ -76,6 +91,12 @@ class Helpers {
     }
     if (!field.match('^([A-Za-z0-9\\_\*]+)$')) {
       throw new Error(`Incorrect field name: "${field}". This library only allows latin letters, digits and underscores in fields/columns name.`)
+    }
+    if (table && this.RESERVED_WORDS.includes(table.toUpperCase())) {
+      table = `${this.ESCAPE_CHAR}${table}${this.ESCAPE_CHAR}`
+    }
+    if (field && this.RESERVED_WORDS.includes(field.toUpperCase())) {
+      field = `${this.ESCAPE_CHAR}${field}${this.ESCAPE_CHAR}`
     }
     return table ? `${table}.${field}` : field
   }

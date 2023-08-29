@@ -2,6 +2,7 @@ const SelectQuery = require('./../components/select-query')
 const QueryClauseGroup = require('./../components/query-clause-group')
 const QueryClause = require('./../components/query-clause')
 const RawSQL = require('../components/raw-sql')
+const { ORMHelpers } = require('..')
 
 test('select-simple', () => {
   const data = ['ronald']
@@ -190,4 +191,17 @@ test('select-with-raw-sql', () => {
     .buildRawSQL()
   expect(q.sql).toBe('SELECT * FROM users WHERE users.password = UNIX_TIMESTAMP() AND MD5(users.username) = ?')
   expect(q.params).toEqual(data)
+})
+
+test('select-with-escape-character', () => {
+  ORMHelpers.RESERVED_WORDS = ['LIMIT']
+  ORMHelpers.ESCAPE_CHAR = '`'
+  const data = ['ronald']
+  const q = (new SelectQuery('users'))
+    .whereAnd('limit', data[0])
+    .buildRawSQL()
+  expect(q.sql).toBe('SELECT * FROM users WHERE users.`limit` = ?')
+  expect(q.params).toEqual(data)
+  ORMHelpers.RESERVED_WORDS = []
+  ORMHelpers.ESCAPE_CHAR = ''
 })

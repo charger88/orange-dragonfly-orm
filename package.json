@@ -1,6 +1,6 @@
 {
   "name": "orange-dragonfly-orm",
-  "version": "0.7.39",
+  "version": "0.7.40",
   "description": "Database connection and SQL queries object models",
   "main": "index.js",
   "scripts": {
