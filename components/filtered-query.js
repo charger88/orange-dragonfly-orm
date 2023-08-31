@@ -119,12 +119,22 @@ class FilteredQuery extends AbstractQuery {
    * @return {string}
    * @private
    */
-  _buildOrderSQL (order) {
+  _buildOrderSQL (order, params) {
     if (!order) return ''
     const fields = Object.keys(order)
     if (!fields.length) return ''
     const sql = fields
-      .map(f => `${Helpers.fieldName(f, this.table, true)} ${this.constructor._getOrderDirection(order[f])}`)
+      .map(f => {
+        if (typeof order[f] === 'object') {
+          if (!order[f].column || !order[f].values) {
+            throw new Error('Incorrect order object');
+          }
+          params.push(...order[f].values.map((v) => Helpers.prepareValue(v)))
+          return `FIELD (${Helpers.fieldName(order[f].column, this.table, true)}, ${order[f].values.map(() => '?').join(', ')}) ${this.constructor._getOrderDirection(order[f].desc)}`
+        } else {
+          return `${Helpers.fieldName(f, this.table, true)} ${this.constructor._getOrderDirection(order[f])}`
+        }
+      })
       .join(', ')
     return `ORDER BY ${sql}`
   }

@@ -17,7 +17,7 @@ class DeleteQuery extends FilteredQuery {
     const params = []
     const table_sql = `FROM ${Helpers.tableName(this.table)}`
     const where_sql = this._buildWhereSQL(params)
-    const order_sql = this._buildOrderSQL(order)
+    const order_sql = this._buildOrderSQL(order, params)
     const limits_sql = this._buildLimitsSQL(limit, offset)
     let sql = `DELETE ${table_sql} ${where_sql} ${order_sql} ${limits_sql}`
     sql = this.constructor.cleanUpQuery(sql)

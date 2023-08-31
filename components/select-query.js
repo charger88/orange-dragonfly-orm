@@ -110,7 +110,7 @@ class SelectQuery extends FilteredQuery {
     const joins_sql = this._buildJoinSQL(params)
     const where_sql = this._buildWhereSQL(params)
     const group_sql = this._buildGroupSQL()
-    const order_sql = this._buildOrderSQL(order)
+    const order_sql = this._buildOrderSQL(order, params)
     const limits_sql = this._buildLimitsSQL(limit, offset)
     let sql = `SELECT ${select_sql} ${table_sql} ${joins_sql} ${where_sql} ${group_sql} ${order_sql} ${limits_sql}`
     sql = this.constructor.cleanUpQuery(sql)

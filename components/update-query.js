@@ -36,7 +36,7 @@ class UpdateQuery extends FilteredQuery {
     const table_sql = `${Helpers.tableName(this.table)}`
     const update_sql = this._buildUpdateSQL(data, params)
     const where_sql = this._buildWhereSQL(params)
-    const order_sql = this._buildOrderSQL(order)
+    const order_sql = this._buildOrderSQL(order, params)
     const limits_sql = this._buildLimitsSQL(limit, offset)
     let sql = `UPDATE ${table_sql} SET ${update_sql} ${where_sql} ${order_sql} ${limits_sql}`
     sql = this.constructor.cleanUpQuery(sql)

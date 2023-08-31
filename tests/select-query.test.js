@@ -119,6 +119,27 @@ test('select-order', () => {
   expect(q.params).toEqual(data)
 })
 
+test('select-special-order', () => {
+  const data = ['ronald']
+  const q = (new SelectQuery('users'))
+    .whereAnd('username', data[0])
+    .buildRawSQL('*', null, 0, {
+      '&^&^&^&': {
+        'column': 'access_class',
+        'values': ['a', 'b', 'c'],
+        'desc': true
+      },
+      'XXXXX': {
+        'column': 'another_table.t1',
+        'values': ['test', 2],
+        'desc': false
+      },
+      'id': false
+    })
+  expect(q.sql).toBe('SELECT * FROM users WHERE users.username = ? ORDER BY FIELD (users.access_class, ?, ?, ?) DESC, FIELD (another_table.t1, ?, ?) ASC, users.id ASC')
+  expect(q.params).toEqual([...data, 'a', 'b', 'c', 'test', 2])
+})
+
 test('select-order-strings', () => {
   const data = ['ronald']
   const q = (new SelectQuery('users'))
