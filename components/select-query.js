@@ -22,7 +22,7 @@ class SelectQuery extends FilteredQuery {
   joinTable (join_type, table_name, key, foreign_key, operator = '=', alias = null) {
     const table = Helpers.tableName(table_name)
     const a = {'type': 'field', 'value': Helpers.fieldName(key, this.table)}
-    const b = {'type': 'field', 'value': Helpers.fieldName(foreign_key, table)}
+    const b = {'type': 'field', 'value': Helpers.fieldName(foreign_key, alias || table)}
     const clause = new QueryClauseGroup([new QueryClause(a, b, operator)], false, this.table)
     return this.joinTableCustom(join_type, table_name, clause, alias)
   }

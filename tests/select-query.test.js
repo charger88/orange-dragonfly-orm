@@ -185,7 +185,7 @@ test('select-join-alias', () => {
     .whereAnd('admin', data[0])
     .whereAnd('relatives.relation', data[1])
     .buildRawSQL(['name', 'relatives.name'])
-  expect(q.sql).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives my_table ON users.id = relatives.user_id WHERE users.admin = ? AND relatives.relation = ?')
+  expect(q.sql).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives my_table ON users.id = my_table.user_id WHERE users.admin = ? AND relatives.relation = ?')
   expect(q.params).toEqual(data)
 })
 
