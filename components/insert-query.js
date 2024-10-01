@@ -30,7 +30,7 @@ class InsertQuery extends AbstractQuery {
       }
       q_set_sql.push(q_set_sql_one.join(', '))
     }
-    let sql = `INSERT INTO ${Helpers.tableName(this.table)} ${fields_sql} VALUES (${q_set_sql.join('), (')})`
+    let sql = `INSERT INTO ${Helpers.tableName(this.table, true)} ${fields_sql} VALUES (${q_set_sql.join('), (')})`
     sql = this.constructor.cleanUpQuery(sql)
     return {sql, params}
   }

@@ -226,3 +226,16 @@ test('select-with-escape-character', () => {
   ORMHelpers.RESERVED_WORDS = []
   ORMHelpers.ESCAPE_CHAR = ''
 })
+
+test('select-with-escape-character-for-table', () => {
+  ORMHelpers.RESERVED_WORDS = ['LIMIT']
+  ORMHelpers.ESCAPE_CHAR = '`'
+  const data = ['ronald']
+  const q = (new SelectQuery('limit'))
+    .whereAnd('test_value', data[0])
+    .buildRawSQL()
+  expect(q.sql).toBe('SELECT * FROM `limit` WHERE `limit`.test_value = ?')
+  expect(q.params).toEqual(data)
+  ORMHelpers.RESERVED_WORDS = []
+  ORMHelpers.ESCAPE_CHAR = ''
+})

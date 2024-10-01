@@ -33,7 +33,7 @@ class UpdateQuery extends FilteredQuery {
    */
   buildRawSQL (data, limit = null, offset = 0, order = {}) {
     const params = []
-    const table_sql = `${Helpers.tableName(this.table)}`
+    const table_sql = `${Helpers.tableName(this.table, true)}`
     const update_sql = this._buildUpdateSQL(data, params)
     const where_sql = this._buildWhereSQL(params)
     const order_sql = this._buildOrderSQL(order, params)

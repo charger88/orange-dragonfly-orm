@@ -67,9 +67,9 @@ class SelectQuery extends FilteredQuery {
           jt_sql += jt.join_type.toUpperCase()
         }
       }
-      jt_sql += ` JOIN ${Helpers.tableName(jt.table)} `
+      jt_sql += ` JOIN ${Helpers.tableName(jt.table, true)} `
       if (jt.alias) {
-        jt_sql += `${Helpers.tableName(jt.alias)} `
+        jt_sql += `${Helpers.tableName(jt.alias, true)} `
       }
       if (jt.clause) {
         jt_sql += `ON ${jt.clause.build(params, true)}`
@@ -106,7 +106,7 @@ class SelectQuery extends FilteredQuery {
     if (distinct) {
       select_sql = `DISTINCT ${select_sql}`
     }
-    const table_sql = `FROM ${Helpers.tableName(this.table)}`
+    const table_sql = `FROM ${Helpers.tableName(this.table, true)}`
     const joins_sql = this._buildJoinSQL(params)
     const where_sql = this._buildWhereSQL(params)
     const group_sql = this._buildGroupSQL()

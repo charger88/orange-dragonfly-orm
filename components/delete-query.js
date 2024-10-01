@@ -15,7 +15,7 @@ class DeleteQuery extends FilteredQuery {
    */
   buildRawSQL (limit = null, offset = 0, order = {}) {
     const params = []
-    const table_sql = `FROM ${Helpers.tableName(this.table)}`
+    const table_sql = `FROM ${Helpers.tableName(this.table, true)}`
     const where_sql = this._buildWhereSQL(params)
     const order_sql = this._buildOrderSQL(order, params)
     const limits_sql = this._buildLimitsSQL(limit, offset)

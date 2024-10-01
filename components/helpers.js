@@ -18,11 +18,23 @@ class Helpers {
   /**
    * Validates table name
    * @param table
+   * @param allow_escape
    * @returns {*}
    */
-  static tableName (table) {
+  static tableName (table, allow_escape = false) {
+    if (allow_escape && this.ESCAPE_CHAR) {
+      if (table.startsWith(this.ESCAPE_CHAR)) {
+        table = table.slice(1)
+      }
+      if (table.endsWith(this.ESCAPE_CHAR)) {
+        table = table.slice(0, -1)
+      }
+    }
     if (!table.match('^([A-Za-z0-9\\_]+)$')) {
       throw new Error(`Incorrect table name: "${table}". This library only allows latin letters, digits and underscores in table name.`)
+    }
+    if (allow_escape && this.RESERVED_WORDS.includes(table.toUpperCase())) {
+      table = `${this.ESCAPE_CHAR}${table}${this.ESCAPE_CHAR}`
     }
     return table
   }
@@ -87,13 +99,10 @@ class Helpers {
       field = field[1]
     }
     if (table !== null) {
-      this.tableName(table)
+      table = this.tableName(table, true)
     }
     if (!field.match('^([A-Za-z0-9\\_\*]+)$')) {
       throw new Error(`Incorrect field name: "${field}". This library only allows latin letters, digits and underscores in fields/columns name.`)
-    }
-    if (table && this.RESERVED_WORDS.includes(table.toUpperCase())) {
-      table = `${this.ESCAPE_CHAR}${table}${this.ESCAPE_CHAR}`
     }
     if (field && this.RESERVED_WORDS.includes(field.toUpperCase())) {
       field = `${this.ESCAPE_CHAR}${field}${this.ESCAPE_CHAR}`
