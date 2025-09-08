@@ -45,6 +45,11 @@ class QueryClause {
         table = op_value[0]
         value = op_value[1]
       }
+      if (Helpers.ESCAPE_CHAR) {
+        if (value.startsWith(Helpers.ESCAPE_CHAR) && value.endsWith(Helpers.ESCAPE_CHAR)) {
+          value = value.slice(1, -1)
+        }
+      }
       if (!value.match('^([A-Za-z0-9\\_]+)$')) {
         throw new Error(`Incorrect field name: "${value}"`)
       }
