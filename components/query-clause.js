@@ -77,8 +77,9 @@ class QueryClause {
    */
   build (params) {
     let expression
-    let a = this.buildOperand(this.a, params)
-    let b = this.buildOperand(this.b, params)
+    let new_params = []
+    let a = this.buildOperand(this.a, new_params)
+    let b = this.buildOperand(this.b, new_params)
     let operator = this.operator
     if (b === 'NULL') {
       if (['=', 'IS'].includes(operator)) {
@@ -97,7 +98,7 @@ class QueryClause {
         throw new Error(`Array value is incompatible with operator "${operator}"`)
       }
     }
-    if (!['IN', 'NOT IN', 'IS', 'IS NOT', '=', '!=', '<>', '>', '<', '>=', '<=', 'LIKE', 'NOT LIKE', '&', '|'].includes(operator)) {
+    if (!['IN', 'NOT IN', 'IS', 'IS NOT', '=', '!=', '<>', '>', '<', '>=', '<=', 'LIKE', 'NOT LIKE', 'MATCH', 'NOT MATCH', '&', '|'].includes(operator)) {
       throw new Error(`Incorrect operator "${operator}"`)
     }
     if (b === '()') {
@@ -111,7 +112,19 @@ class QueryClause {
         operator = '='
       }
     }
-    expression = `${a} ${operator} ${b}`
+    if (['MATCH', 'NOT MATCH'].includes(operator)) { // Note: For real FULLTEXT search, the column should have a FULLTEXT index and Orange Dragonfly DB Driver library should support this feature
+      if (Helpers.FULL_TEXT_CLAUSE_FN) {
+        expression = Helpers.FULL_TEXT_CLAUSE_FN(operator, a, b)
+      } else {
+        this.operator = operator === 'MATCH' ? 'LIKE' : 'NOT LIKE'
+        this.b.value = `%${this.b.value}%`
+        new_params = []
+        expression = this.build(params)
+      }
+    } else {
+      expression = `${a} ${operator} ${b}`
+    }
+    params.push(...new_params)
     return expression
   }
 

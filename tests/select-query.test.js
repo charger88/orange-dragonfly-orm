@@ -239,3 +239,25 @@ test('select-with-escape-character-for-table', () => {
   ORMHelpers.RESERVED_WORDS = []
   ORMHelpers.ESCAPE_CHAR = ''
 })
+
+test('select-fake-fulltext-search', () => {
+  const data = ['developer', 'lazy']
+  const q = (new SelectQuery('users'))
+    .where('bio', data[0], 'MATCH')
+    .where('comment', data[1], 'NOT MATCH')
+    .buildRawSQL()
+  expect(q.sql).toBe('SELECT * FROM users WHERE users.bio LIKE ? AND users.comment NOT LIKE ?')
+  expect(q.params).toEqual(['%developer%', '%lazy%'])
+})
+
+test('select-mysql-fulltext-search', () => {
+  ORMHelpers.FULL_TEXT_CLAUSE_FN = (operator, a, b) => `${operator}(${a}) AGAINST (${b})`
+  const data = ['developer', 'lazy']
+  const q = (new SelectQuery('users'))
+    .where('bio', data[0], 'MATCH')
+    .where('comment', data[1], 'NOT MATCH')
+    .buildRawSQL()
+  expect(q.sql).toBe('SELECT * FROM users WHERE MATCH(users.bio) AGAINST (?) AND NOT MATCH(users.comment) AGAINST (?)')
+  expect(q.params).toEqual(data)
+  ORMHelpers.FULL_TEXT_CLAUSE_FN = null
+})

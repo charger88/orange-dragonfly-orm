@@ -15,6 +15,14 @@ class Helpers {
     this._NAME_ESCAPE_CHAR = value
   }
 
+  static get FULL_TEXT_CLAUSE_FN() {
+    return this._FULL_TEXT_CLAUSE_FN || null
+  }
+
+  static set FULL_TEXT_CLAUSE_FN(value) {
+    this._FULL_TEXT_CLAUSE_FN = value
+  }
+
   /**
    * Validates table name
    * @param table
