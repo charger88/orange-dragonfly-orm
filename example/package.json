@@ -1,7 +1,15 @@
 {
   "name": "orange-dragonfly-orm-example",
   "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx example.ts"
+  },
+  "dependencies": {
+    "mysql2": "^3.22.1"
+  },
   "devDependencies": {
-    "mysql": "^2.18.1"
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
   }
 }

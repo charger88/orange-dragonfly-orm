@@ -79,4 +79,4 @@ run()
   .finally(() => ORM.AbstractQuery.releaseDB()) // If you need to close connection, close it
 ```
 
-You can also find a bit more in `example/example.js` and in `tests` folder.
+You can also find a bit more in `example/example.ts` and in `tests` folder.

@@ -1,13 +1,13 @@
-const Helpers = require('./../components/helpers')
+import Helpers from '../src/helpers'
 
-const multiply_arrays = (a, b, callback) => {
-  const res = []
-  for (let av of a) for (let bv of b) res.push(callback(av, bv))
+const multiply_arrays = <T, U>(a: T[], b: U[], callback: (av: T, bv: U) => string): string[] => {
+  const res: string[] = []
+  for (const av of a) for (const bv of b) res.push(callback(av, bv))
   return res
 }
 
-const build_field_with_table = (av, bv) => {
-  return `${av}.${bv}`;
+const build_field_with_table = (av: string, bv: string): string => {
+  return `${av}.${bv}`
 }
 
 const correct_names = [
@@ -43,7 +43,7 @@ test.each(incorrect_names.concat(['name.name']))('table-name-incorrect', (t_name
 
 test.each(
   correct_names
-    .concat(multiply_arrays(correct_names, correct_names, build_field_with_table))
+    .concat(multiply_arrays(correct_names, correct_names, build_field_with_table)),
 )('field-name-correct', (t_name) => {
   expect(Helpers.fieldName(t_name)).toBe(t_name)
 })
@@ -55,7 +55,7 @@ test.each(
     .concat(multiply_arrays(incorrect_names, incorrect_names, build_field_with_table))
     .concat([
       'table.field.whatever',
-    ])
+    ]),
 )('field-name-incorrect', (t_name) => {
   expect(() => Helpers.fieldName(t_name)).toThrow()
 })

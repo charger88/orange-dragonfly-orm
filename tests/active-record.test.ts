@@ -1,23 +1,17 @@
-const ActiveRecord = require('./../components/active-record')
+import ActiveRecord from '../src/active-record'
 
-class SimpleActiveRecord extends ActiveRecord {
-
-}
+class SimpleActiveRecord extends ActiveRecord {}
 
 class SpecialIDActiveRecord extends ActiveRecord {
-
-  static get id_key () {
+  static get id_key(): string {
     return 'special_id'
   }
-
 }
 
 class SoftDeleteActiveRecord extends ActiveRecord {
-
-  static get special_fields () {
+  static get special_fields(): string[] {
     return ['deleted_at']
   }
-
 }
 
 test('table-name', () => {
@@ -35,7 +29,7 @@ test('active-record-simple-set-it', () => {
   const sar = new SimpleActiveRecord()
   sar.id = 12345
   expect(sar.id).toBe(12345)
-  expect(sar.data).toEqual({'id': 12345})
+  expect(sar.data).toEqual({ 'id': 12345 })
 })
 
 test('active-record-simple-create-data', () => {
@@ -59,7 +53,7 @@ test('active-record-special-id-set-it', () => {
   const sar = new SpecialIDActiveRecord()
   sar.id = 12345
   expect(sar.id).toBe(12345)
-  expect(sar.data).toEqual({'special_id': 12345})
+  expect(sar.data).toEqual({ 'special_id': 12345 })
 })
 
 test('active-record-special-id-create-data', () => {
@@ -106,14 +100,14 @@ test('active-record-special-select', () => {
 })
 
 test('active-record-simple-update', () => {
-  const q = SimpleActiveRecord.updateQuery().buildRawSQL({'some_field': 1})
+  const q = SimpleActiveRecord.updateQuery().buildRawSQL({ 'some_field': 1 })
   expect(q.sql).toBe('UPDATE simple_active_record SET simple_active_record.some_field = ?')
 })
 
 test('active-record-special-update', () => {
-  let q = SoftDeleteActiveRecord.updateQuery(true).buildRawSQL({'some_field': 1})
+  let q = SoftDeleteActiveRecord.updateQuery(true).buildRawSQL({ 'some_field': 1 })
   expect(q.sql).toBe('UPDATE soft_delete_active_record SET soft_delete_active_record.some_field = ?')
-  q = SoftDeleteActiveRecord.updateQuery().buildRawSQL({'some_field': 1})
+  q = SoftDeleteActiveRecord.updateQuery().buildRawSQL({ 'some_field': 1 })
   expect(q.sql).toBe('UPDATE soft_delete_active_record SET soft_delete_active_record.some_field = ? WHERE soft_delete_active_record.deleted_at IS NULL')
 })
 

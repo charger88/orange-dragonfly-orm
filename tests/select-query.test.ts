@@ -1,8 +1,8 @@
-const SelectQuery = require('./../components/select-query')
-const QueryClauseGroup = require('./../components/query-clause-group')
-const QueryClause = require('./../components/query-clause')
-const RawSQL = require('../components/raw-sql')
-const { ORMHelpers } = require('..')
+import SelectQuery from '../src/select-query'
+import QueryClauseGroup from '../src/query-clause-group'
+import QueryClause from '../src/query-clause'
+import RawSQL from '../src/raw-sql'
+import { ORMHelpers } from '../src'
 
 test('select-simple', () => {
   const data = ['ronald']
@@ -14,7 +14,7 @@ test('select-simple', () => {
 })
 
 test('select-empty-in', () => {
-  const data = []
+  const data: unknown[] = []
   const q = (new SelectQuery('users'))
     .whereAnd('username', data)
     .buildRawSQL()
@@ -26,21 +26,21 @@ test('select-distinct', () => {
   const q = (new SelectQuery('users'))
     .buildRawSQL([{
       'field': 'email',
-      'distinct': true
+      'distinct': true,
     }])
   expect(q.sql).toBe('SELECT DISTINCT users.email FROM users')
 })
 
 test('select-distinct-alternate', () => {
   const q = (new SelectQuery('users'))
-    .buildRawSQL(['email'], null, null, {}, true)
+    .buildRawSQL(['email'], null, null as unknown as number, {}, true)
   expect(q.sql).toBe('SELECT DISTINCT users.email FROM users')
 })
 
 test('select-raw', () => {
   const q = (new SelectQuery('users'))
     .buildRawSQL([{
-      'raw': '2 + 2'
+      'raw': '2 + 2',
     }])
   expect(q.sql).toBe('SELECT 2 + 2 FROM users')
 })
@@ -104,17 +104,16 @@ test('select-in-duplications', () => {
 })
 
 test('select-no-where-limit-offset', () => {
-  const data = []
   const q = (new SelectQuery('users')).buildRawSQL('*', 10, 5)
   expect(q.sql).toBe('SELECT * FROM users LIMIT 10 OFFSET 5')
-  expect(q.params).toEqual(data)
+  expect(q.params).toEqual([])
 })
 
 test('select-order', () => {
   const data = ['ronald']
   const q = (new SelectQuery('users'))
     .whereAnd('username', data[0])
-    .buildRawSQL('*', null, 0, {'year': true, 'id': false})
+    .buildRawSQL('*', null, 0, { 'year': true, 'id': false })
   expect(q.sql).toBe('SELECT * FROM users WHERE users.username = ? ORDER BY users.year DESC, users.id ASC')
   expect(q.params).toEqual(data)
 })
@@ -127,14 +126,14 @@ test('select-special-order', () => {
       '&^&^&^&': {
         'column': 'access_class',
         'values': ['a', 'b', 'c'],
-        'desc': true
+        'desc': true,
       },
       'XXXXX': {
         'column': 'another_table.t1',
         'values': ['test', 2],
-        'desc': false
+        'desc': false,
       },
-      'id': false
+      'id': false,
     })
   expect(q.sql).toBe('SELECT * FROM users WHERE users.username = ? ORDER BY FIELD (users.access_class, ?, ?, ?) DESC, FIELD (another_table.t1, ?, ?) ASC, users.id ASC')
   expect(q.params).toEqual([...data, 'a', 'b', 'c', 'test', 2])
@@ -144,36 +143,34 @@ test('select-order-strings', () => {
   const data = ['ronald']
   const q = (new SelectQuery('users'))
     .whereAnd('username', data[0])
-    .buildRawSQL('*', null, 0, {'year': 'desc', 'id': 'asc'})
+    .buildRawSQL('*', null, 0, { 'year': 'desc', 'id': 'asc' })
   expect(q.sql).toBe('SELECT * FROM users WHERE users.username = ? ORDER BY users.year DESC, users.id ASC')
   expect(q.params).toEqual(data)
 })
 
 test('select-group', () => {
-  const data = []
   const q = (new SelectQuery('users'))
     .groupBy('home_state')
-    .buildRawSQL(['home_state', {'function': 'COUNT', 'arguments': ['id']}], null, 0, {'2': true})
+    .buildRawSQL(['home_state', { 'function': 'COUNT', 'arguments': ['id'] }], null, 0, { '2': true })
   expect(q.sql).toBe('SELECT users.home_state, COUNT(users.id) FROM users GROUP BY users.home_state ORDER BY 2 DESC')
-  expect(q.params).toEqual(data)
+  expect(q.params).toEqual([])
 })
 
 test('select-group-by-number', () => {
-  const data = []
   const q = (new SelectQuery('users'))
     .groupBy(1)
-    .buildRawSQL(['home_state', {'function': 'COUNT', 'arguments': ['id']}], null, 0, {'2': true})
+    .buildRawSQL(['home_state', { 'function': 'COUNT', 'arguments': ['id'] }], null, 0, { '2': true })
   expect(q.sql).toBe('SELECT users.home_state, COUNT(users.id) FROM users GROUP BY 1 ORDER BY 2 DESC')
-  expect(q.params).toEqual(data)
+  expect(q.params).toEqual([])
 })
 
 test('select-join-order', () => {
   const data = [true, 'spouse']
   const q = (new SelectQuery('users'))
-    .joinTable('LEFT', 'relatives', `id`, 'user_id')
+    .joinTable('LEFT', 'relatives', 'id', 'user_id')
     .whereAnd('admin', data[0])
     .whereAnd('relatives.relation', data[1])
-    .buildRawSQL(['name', 'relatives.name'], null, 0, {'year': true, 'relatives.id': false})
+    .buildRawSQL(['name', 'relatives.name'], null, 0, { 'year': true, 'relatives.id': false })
   expect(q.sql).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives ON users.id = relatives.user_id WHERE users.admin = ? AND relatives.relation = ? ORDER BY users.year DESC, relatives.id ASC')
   expect(q.params).toEqual(data)
 })
@@ -181,7 +178,7 @@ test('select-join-order', () => {
 test('select-join-alias', () => {
   const data = [true, 'spouse']
   const q = (new SelectQuery('users'))
-    .joinTable('LEFT', 'relatives', `id`, 'user_id', '=', 'my_table')
+    .joinTable('LEFT', 'relatives', 'id', 'user_id', '=', 'my_table')
     .whereAnd('admin', data[0])
     .whereAnd('relatives.relation', data[1])
     .buildRawSQL(['name', 'relatives.name'])
@@ -193,8 +190,8 @@ test('select-join-multiple', () => {
   const SOME_VALUE = 5
   const data = [true, 'spouse']
   const table = 'users'
-  const c1 = new QueryClause({'type': 'field', 'value': `${table}.id`}, {'type': 'field', 'value': `relatives.user_id`}, '=', false, table)
-  const c2 = new QueryClause({'type': 'field', 'value': `${table}.status`}, {'type': 'value', 'value': SOME_VALUE}, '=', false, table)
+  const c1 = new QueryClause({ 'type': 'field', 'value': `${table}.id` }, { 'type': 'field', 'value': 'relatives.user_id' }, '=', false, table)
+  const c2 = new QueryClause({ 'type': 'field', 'value': `${table}.status` }, { 'type': 'value', 'value': SOME_VALUE }, '=', false, table)
   const q = (new SelectQuery(table))
     .joinTableCustom('LEFT', 'relatives', new QueryClauseGroup([c1, c2], false, table), 'my_table')
     .whereAnd('admin', data[0])
@@ -208,7 +205,7 @@ test('select-with-raw-sql', () => {
   const data = ['ronald']
   const q = (new SelectQuery('users'))
     .whereAnd('password', new RawSQL('UNIX_TIMESTAMP()'))
-    .whereAnd(new RawSQL('MD5(users.username)'), data[0])
+    .whereAnd(new RawSQL('MD5(users.username)') as unknown as string, data[0])
     .buildRawSQL()
   expect(q.sql).toBe('SELECT * FROM users WHERE users.password = UNIX_TIMESTAMP() AND MD5(users.username) = ?')
   expect(q.params).toEqual(data)

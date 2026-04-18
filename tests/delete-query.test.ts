@@ -1,4 +1,4 @@
-const DeleteQuery = require('./../components/delete-query')
+import DeleteQuery from '../src/delete-query'
 
 test('delete-simple', () => {
   const data = ['hillary']

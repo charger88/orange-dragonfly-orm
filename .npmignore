@@ -1,0 +1,11 @@
+.idea
+src
+tests
+examples
+*.ts
+!dist/**
+tsconfig.json
+tsup.config.ts
+jest.config.cjs
+eslint.config.js
+generate-docs.ts

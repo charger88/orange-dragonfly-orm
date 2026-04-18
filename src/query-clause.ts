@@ -1,45 +1,29 @@
-const Helpers = require('./helpers')
-const RawSQL = require('./raw-sql')
+import Helpers from './helpers'
+import RawSQL from './raw-sql'
+import type { ClauseOperand } from './types'
 
-/**
- * SQL clause (like "id = 1")
- */
 class QueryClause {
+  a: ClauseOperand
+  b: ClauseOperand
+  operator: string | null
+  or_logic: boolean
+  table: string | null
 
-  a = null
-  b = null
-  operator = null
-  or_logic = false
-  table = null
-
-  /**
-   * @param a
-   * @param b
-   * @param operator
-   * @param or
-   * @param table
-   */
-  constructor (a, b, operator, or, table) {
+  constructor(a: ClauseOperand | null, b: ClauseOperand | null, operator: string, or?: boolean, table?: string | null) {
     this.a = a || {}
     this.b = b || {}
     this.operator = operator
     this.or_logic = !!or
-    this.table = table
+    this.table = table || null
   }
 
-  /**
-   * Builds SQL of the clause's operand
-   * @param operand
-   * @param params
-   * @return {*}
-   */
-  buildOperand (operand, params) {
+  buildOperand(operand: ClauseOperand, params: unknown[]): string {
     if (operand.value instanceof RawSQL) {
       return operand.value.SQL
     }
     if (operand.type === 'field') {
       let table = this.table
-      let value = operand.value
+      let value = operand.value as string
       if (value.includes('.')) {
         const op_value = value.split('.', 2)
         table = op_value[0]
@@ -53,12 +37,12 @@ class QueryClause {
       if (!value.match('^([A-Za-z0-9\\_]+)$')) {
         throw new Error(`Incorrect field name: "${value}"`)
       }
-      return Helpers.fieldName(value, table)
+      return String(Helpers.fieldName(value, table))
     } else {
-      if (operand.value === null) {
+      if (operand.value === null || operand.value === undefined) {
         return 'NULL'
       } else if (Array.isArray(operand.value)) {
-        const q = [... new Set(operand.value)].map(v => {
+        const q = [...new Set(operand.value)].map(v => {
           params.push(v)
           return '?'
         }).join(', ')
@@ -70,17 +54,12 @@ class QueryClause {
     }
   }
 
-  /**
-   * Builds SQL of the clause
-   * @param params
-   * @return {string}
-   */
-  build (params) {
-    let expression
-    let new_params = []
+  build(params: unknown[]): string {
+    let expression: string
+    const new_params: unknown[] = []
     let a = this.buildOperand(this.a, new_params)
     let b = this.buildOperand(this.b, new_params)
-    let operator = this.operator
+    let operator = this.operator as string
     if (b === 'NULL') {
       if (['=', 'IS'].includes(operator)) {
         operator = 'IS'
@@ -112,14 +91,15 @@ class QueryClause {
         operator = '='
       }
     }
-    if (['MATCH', 'NOT MATCH'].includes(operator)) { // Note: For real FULLTEXT search, the column should have a FULLTEXT index and Orange Dragonfly DB Driver library should support this feature
+    if (['MATCH', 'NOT MATCH'].includes(operator)) {
       if (Helpers.FULL_TEXT_CLAUSE_FN) {
         expression = Helpers.FULL_TEXT_CLAUSE_FN(operator, a, b)
+        // Falls through to params.push(...new_params) to include the bound value
       } else {
+        // Discard new_params (they hold the unmodified value); modify and recurse
         this.operator = operator === 'MATCH' ? 'LIKE' : 'NOT LIKE'
         this.b.value = `%${this.b.value}%`
-        new_params = []
-        expression = this.build(params)
+        return this.build(params)
       }
     } else {
       expression = `${a} ${operator} ${b}`
@@ -127,7 +107,6 @@ class QueryClause {
     params.push(...new_params)
     return expression
   }
-
 }
 
-module.exports = QueryClause
+export default QueryClause
