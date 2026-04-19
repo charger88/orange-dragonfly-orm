@@ -20,8 +20,8 @@ CREATE TABLE color (
 	color_name VARCHAR(8) NOT NULL
 );
 
-INSERT INTO brand (id, brand_name) VALUES (1, 'Chevrolet');
-INSERT INTO brand (id, brand_name) VALUES (2, 'Ford');
+INSERT INTO brand (id, brand_name) VALUES (1, 'Ford');
+INSERT INTO brand (id, brand_name) VALUES (2, 'Chevrolet');
 INSERT INTO brand (id, brand_name) VALUES (3, 'Dodge');
 
 INSERT INTO car_model (id, brand_id, model_name) VALUES (1, 1, 'Fusion');

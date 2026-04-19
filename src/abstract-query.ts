@@ -1,8 +1,19 @@
 import Helpers from './helpers'
 import AbstractDB from './abstract-db'
+import { OrangeDatabaseError } from './errors'
 import type { IActiveRecordConstructor } from './types'
 
 class AbstractQuery {
+  /**
+   * The single registered database adapter for the entire process.
+   *
+   * **Known limitation**: this is a static (process-wide) singleton. Only one
+   * `AbstractDB` instance can be active at a time, shared by all query classes.
+   * Multi-database or multi-tenant scenarios are not supported without subclassing
+   * `AbstractQuery` and overriding this property per subclass.
+   *
+   * Register via {@link registerDB}; release via {@link releaseDB}.
+   */
   protected static db_object: AbstractDB | null = null
 
   table: string
@@ -15,7 +26,7 @@ class AbstractQuery {
 
   static get db(): AbstractDB {
     if (this.db_object === null) {
-      throw new Error('Database object should be registered for AbstractQuery via AbstractQuery.registerDB(db) method.')
+      throw new OrangeDatabaseError('Database object should be registered for AbstractQuery via AbstractQuery.registerDB(db) method.')
     }
     return this.db_object
   }
@@ -24,19 +35,15 @@ class AbstractQuery {
     this.db_object = db
   }
 
-  static releaseDB(): void {
+  static async releaseDB(): Promise<void> {
     if (this.db_object) {
-      this.db_object.disconnect()
+      await this.db_object.disconnect()
       this.db_object = null
     }
   }
 
   static async runRawSQL(sql: string, params?: unknown[]): Promise<unknown> {
     return await this.db.q(sql, params)
-  }
-
-  static cleanUpQuery(sql: string): string {
-    return sql.replace(/\s+/g, ' ').trim()
   }
 }
 

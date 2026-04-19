@@ -1,4 +1,5 @@
 import ActiveRecord from '../src/active-record'
+import { normalizeSQL } from './test-helpers'
 
 class SimpleActiveRecord extends ActiveRecord {}
 
@@ -69,7 +70,7 @@ test('active-record-special-id-create-data', () => {
 
 test('active-record-now', () => {
   const before = Math.floor(Date.now() / 1000)
-  const now = SimpleActiveRecord._now()
+  const now = (SimpleActiveRecord as any)._now()
   const after = Math.ceil(Date.now() / 1000)
   expect(now).toBeGreaterThanOrEqual(before)
   expect(now).toBeLessThanOrEqual(after)
@@ -84,41 +85,41 @@ test('active-record-query-methods', () => {
 
 test('active-record-simple-insert', () => {
   const q = SimpleActiveRecord.insertQuery().buildRawSQL(['name'], [['Donald']])
-  expect(q.sql).toBe('INSERT INTO simple_active_record (name) VALUES (?)')
+  expect(normalizeSQL(q.sql)).toBe('INSERT INTO simple_active_record (name) VALUES (?)')
 })
 
 test('active-record-simple-select', () => {
   const q = SimpleActiveRecord.selectQuery().buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM simple_active_record')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM simple_active_record')
 })
 
 test('active-record-special-select', () => {
   let q = SoftDeleteActiveRecord.selectQuery(true).buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM soft_delete_active_record')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM soft_delete_active_record')
   q = SoftDeleteActiveRecord.selectQuery().buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM soft_delete_active_record WHERE soft_delete_active_record.deleted_at IS NULL')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM soft_delete_active_record WHERE soft_delete_active_record.deleted_at IS NULL')
 })
 
 test('active-record-simple-update', () => {
   const q = SimpleActiveRecord.updateQuery().buildRawSQL({ 'some_field': 1 })
-  expect(q.sql).toBe('UPDATE simple_active_record SET simple_active_record.some_field = ?')
+  expect(normalizeSQL(q.sql)).toBe('UPDATE simple_active_record SET simple_active_record.some_field = ?')
 })
 
 test('active-record-special-update', () => {
   let q = SoftDeleteActiveRecord.updateQuery(true).buildRawSQL({ 'some_field': 1 })
-  expect(q.sql).toBe('UPDATE soft_delete_active_record SET soft_delete_active_record.some_field = ?')
+  expect(normalizeSQL(q.sql)).toBe('UPDATE soft_delete_active_record SET soft_delete_active_record.some_field = ?')
   q = SoftDeleteActiveRecord.updateQuery().buildRawSQL({ 'some_field': 1 })
-  expect(q.sql).toBe('UPDATE soft_delete_active_record SET soft_delete_active_record.some_field = ? WHERE soft_delete_active_record.deleted_at IS NULL')
+  expect(normalizeSQL(q.sql)).toBe('UPDATE soft_delete_active_record SET soft_delete_active_record.some_field = ? WHERE soft_delete_active_record.deleted_at IS NULL')
 })
 
 test('active-record-simple-delete', () => {
   const q = SimpleActiveRecord.deleteQuery().buildRawSQL()
-  expect(q.sql).toBe('DELETE FROM simple_active_record')
+  expect(normalizeSQL(q.sql)).toBe('DELETE FROM simple_active_record')
 })
 
 test('active-record-special-delete', () => {
   let q = SoftDeleteActiveRecord.deleteQuery(true).buildRawSQL()
-  expect(q.sql).toBe('DELETE FROM soft_delete_active_record')
+  expect(normalizeSQL(q.sql)).toBe('DELETE FROM soft_delete_active_record')
   q = SoftDeleteActiveRecord.deleteQuery().buildRawSQL()
-  expect(q.sql).toBe('DELETE FROM soft_delete_active_record WHERE soft_delete_active_record.deleted_at IS NULL')
+  expect(normalizeSQL(q.sql)).toBe('DELETE FROM soft_delete_active_record WHERE soft_delete_active_record.deleted_at IS NULL')
 })

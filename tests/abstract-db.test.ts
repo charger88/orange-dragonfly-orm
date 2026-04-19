@@ -1,4 +1,5 @@
 import AbstractDB from '../src/abstract-db'
+import { OrangeDatabaseQueryError } from '../src/errors'
 
 type TestResult = {
   ok: boolean
@@ -40,7 +41,7 @@ class TestDB extends AbstractDB {
     return this.connected
   }
 
-  disconnect(): void {
+  async disconnect(): Promise<void> {
     this.connected = false
     this.connection = null
   }
@@ -50,8 +51,22 @@ test('abstract-db-q-does-not-auto-retry', async() => {
   const db = new TestDB({})
   db.shouldFailQueries = 1
 
-  await expect(db.q('SELECT 1')).rejects.toThrow('DB Query problem: Error: connection lost')
+  await expect(db.q('SELECT 1')).rejects.toThrow('DB Query problem')
   expect(db.queryCalls).toBe(1)
+})
+
+test('abstract-db-q-error-preserves-cause', async() => {
+  const db = new TestDB({})
+  db.shouldFailQueries = 1
+
+  try {
+    await db.q('SELECT 1')
+    throw new Error('should have thrown')
+  } catch (e) {
+    expect(e).toBeInstanceOf(OrangeDatabaseQueryError)
+    expect((e as OrangeDatabaseQueryError).cause).toBeInstanceOf(Error)
+    expect(((e as OrangeDatabaseQueryError).cause as Error).message).toBe('connection lost')
+  }
 })
 
 test('abstract-db-get-connection-reconnects-when-disconnected', async() => {

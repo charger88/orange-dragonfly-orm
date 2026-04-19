@@ -1,5 +1,6 @@
 import ActiveRecord from '../src/active-record'
 import Relation from '../src/relation'
+import { normalizeSQL } from './test-helpers'
 
 class Brand extends ActiveRecord {
   static get available_relations() {
@@ -34,72 +35,72 @@ ActiveRecord
 test('relation-children', () => {
   const data = [7]
   const rel = Brand.available_relations['car-models']
-  expect(rel._a_key_by_mode).toBe('id')
-  expect(rel._b_key_by_mode).toBe('brand_id')
-  const q = rel._getDataBuildQuery(data).buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM car_model WHERE car_model.brand_id IN (?)')
+  expect((rel as any)._a_key_by_mode).toBe('id')
+  expect((rel as any)._b_key_by_mode).toBe('brand_id')
+  const q = (rel as any)._getDataBuildQuery(data).buildRawSQL()
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM car_model WHERE car_model.brand_id IN (?)')
   expect(q.params).toEqual(data)
 })
 
 test('relation-children-with-condition', () => {
   const data = [7]
   const rel = Brand.available_relations['car-models-not-empty']
-  expect(rel._a_key_by_mode).toBe('id')
-  expect(rel._b_key_by_mode).toBe('brand_id')
-  const q = rel._getDataBuildQuery(data).buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM car_model WHERE car_model.brand_id IN (?) AND car_model.model_name != ?')
+  expect((rel as any)._a_key_by_mode).toBe('id')
+  expect((rel as any)._b_key_by_mode).toBe('brand_id')
+  const q = (rel as any)._getDataBuildQuery(data).buildRawSQL()
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM car_model WHERE car_model.brand_id IN (?) AND car_model.model_name != ?')
   expect(q.params).toEqual([...data, ''])
 })
 
 test('relation-children-with-condition-custom-merge', () => {
   const data = [7]
   const rel = Brand.available_relations['car-models-not-empty']
-  expect(rel._a_key_by_mode).toBe('id')
-  expect(rel._b_key_by_mode).toBe('brand_id')
+  expect((rel as any)._a_key_by_mode).toBe('id')
+  expect((rel as any)._b_key_by_mode).toBe('brand_id')
   rel.specify(q => q.where('id', 0, '>'), true)
-  const q = rel._getDataBuildQuery(data).buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM car_model WHERE car_model.brand_id IN (?) AND car_model.model_name != ? AND car_model.id > ?')
+  const q = (rel as any)._getDataBuildQuery(data).buildRawSQL()
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM car_model WHERE car_model.brand_id IN (?) AND car_model.model_name != ? AND car_model.id > ?')
   expect(q.params).toEqual([...data, '', 0])
 })
 
 test('relation-children-with-condition-custom-replace', () => {
   const data = [7]
   const rel = Brand.available_relations['car-models-not-empty']
-  expect(rel._a_key_by_mode).toBe('id')
-  expect(rel._b_key_by_mode).toBe('brand_id')
+  expect((rel as any)._a_key_by_mode).toBe('id')
+  expect((rel as any)._b_key_by_mode).toBe('brand_id')
   rel.specify(q => q.where('id', 0, '>'))
-  const q = rel._getDataBuildQuery(data).buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM car_model WHERE car_model.brand_id IN (?) AND car_model.id > ?')
+  const q = (rel as any)._getDataBuildQuery(data).buildRawSQL()
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM car_model WHERE car_model.brand_id IN (?) AND car_model.id > ?')
   expect(q.params).toEqual(data.concat([0]))
 })
 
 test('relation-children-same-table', () => {
   const data = [7]
   const rel = Brand.available_relations['sub-divisions']
-  expect(rel._a_key_by_mode).toBe('id')
-  expect(rel._b_key_by_mode).toBe('parent_brand_id')
-  const q = rel._getDataBuildQuery(data).buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM brand WHERE brand.parent_brand_id IN (?)')
+  expect((rel as any)._a_key_by_mode).toBe('id')
+  expect((rel as any)._b_key_by_mode).toBe('parent_brand_id')
+  const q = (rel as any)._getDataBuildQuery(data).buildRawSQL()
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM brand WHERE brand.parent_brand_id IN (?)')
   expect(q.params).toEqual(data)
 })
 
 test('relation-parent', () => {
   const data = [5]
   const rel = CarModel.available_relations['brand']
-  expect(rel._a_key_by_mode).toBe('brand_id')
-  expect(rel._b_key_by_mode).toBe('id')
-  const q = rel._getDataBuildQuery(data).buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM brand WHERE brand.id IN (?)')
+  expect((rel as any)._a_key_by_mode).toBe('brand_id')
+  expect((rel as any)._b_key_by_mode).toBe('id')
+  const q = (rel as any)._getDataBuildQuery(data).buildRawSQL()
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM brand WHERE brand.id IN (?)')
   expect(q.params).toEqual(data)
 })
 
 test('relation-parent-same-table', () => {
   const data = [5]
   const rel = Brand.available_relations['parent-division']
-  expect(rel._a_key_by_mode).toBe('parent_brand_id')
-  expect(rel._b_key_by_mode).toBe('id')
-  const q = rel._getDataBuildQuery(data).buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM brand WHERE brand.id IN (?)')
+  expect((rel as any)._a_key_by_mode).toBe('parent_brand_id')
+  expect((rel as any)._b_key_by_mode).toBe('id')
+  const q = (rel as any)._getDataBuildQuery(data).buildRawSQL()
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM brand WHERE brand.id IN (?)')
   expect(q.params).toEqual(data)
 })
 
@@ -115,7 +116,7 @@ test('relation-get-data-result', () => {
     new CarModel({ 'id': 4, 'brand_id': 2 }),
     new CarModel({ 'id': 5, 'brand_id': 1 }),
   ]
-  const res = Brand.available_relations['car-models']._getDataResult(models, brands) as Record<number, CarModel[]>
+  const res = (Brand.available_relations['car-models'] as any)._getDataResult(models, brands) as Record<number, CarModel[]>
   expect(Object.keys(res).length).toBe(2)
   expect(res[1].length).toBe(3)
   expect(res[2].length).toBe(2)
@@ -142,7 +143,7 @@ test('relation-get-independent-data-result', () => {
     new BodyStyle({ 'id': 4, 'body_style_id': 3, 'car_model_id': 2 }),
     new BodyStyle({ 'id': 5, 'body_style_id': 4, 'car_model_id': 2 }),
   ]
-  const res = Relation._getIndependentDataResult(
+  const res = (Relation as any)._getIndependentDataResult(
     {
       '1': [available[0], available[1], available[2]],
       '2': [available[3], available[4]],
@@ -163,11 +164,11 @@ test('relation-get-independent-data-result', () => {
 
 test('relation-clone', () => {
   const rel = CarModel.available_relations['brand']
-  expect(rel._a_key_by_mode).toBe('brand_id')
-  expect(rel._b_key_by_mode).toBe('id')
+  expect((rel as any)._a_key_by_mode).toBe('brand_id')
+  expect((rel as any)._b_key_by_mode).toBe('id')
   const cloned = rel.clone()
-  expect(cloned._a_key_by_mode).toBe('brand_id')
-  expect(cloned._b_key_by_mode).toBe('id')
+  expect((cloned as any)._a_key_by_mode).toBe('brand_id')
+  expect((cloned as any)._b_key_by_mode).toBe('id')
   cloned.specify(q => q.where('id', 0, '>')).params({ 'limit': 45 })
   expect(rel.specify_functions.length).toBe(0)
   expect(cloned.specify_functions.length).toBe(1)

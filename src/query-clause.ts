@@ -5,7 +5,7 @@ import type { ClauseOperand } from './types'
 class QueryClause {
   a: ClauseOperand
   b: ClauseOperand
-  operator: string | null
+  operator: string
   or_logic: boolean
   table: string | null
 
@@ -17,7 +17,7 @@ class QueryClause {
     this.table = table || null
   }
 
-  buildOperand(operand: ClauseOperand, params: unknown[]): string {
+  protected buildOperand(operand: ClauseOperand, params: unknown[]): string {
     if (operand.value instanceof RawSQL) {
       return operand.value.SQL
     }
@@ -56,11 +56,12 @@ class QueryClause {
 
   build(params: unknown[]): string {
     let expression: string
-    const new_params: unknown[] = []
+    let new_params: unknown[] = []
     let a = this.buildOperand(this.a, new_params)
     let b = this.buildOperand(this.b, new_params)
-    let operator = this.operator as string
-    if (b === 'NULL') {
+    let operator = this.operator
+    const b_is_raw = this.b.value instanceof RawSQL
+    if (!b_is_raw && b === 'NULL') {
       if (['=', 'IS'].includes(operator)) {
         operator = 'IS'
       } else if (['!=', '<>', 'IS NOT'].includes(operator)) {
@@ -68,7 +69,7 @@ class QueryClause {
       } else {
         throw new Error(`Null value is incompatible with operator "${operator}"`)
       }
-    } else if (b.startsWith('(') && b.endsWith(')')) {
+    } else if (!b_is_raw && b.startsWith('(') && b.endsWith(')')) {
       if (['=', 'IN'].includes(operator)) {
         operator = 'IN'
       } else if (['!=', '<>', 'NOT IN'].includes(operator)) {
@@ -96,10 +97,12 @@ class QueryClause {
         expression = Helpers.FULL_TEXT_CLAUSE_FN(operator, a, b)
         // Falls through to params.push(...new_params) to include the bound value
       } else {
-        // Discard new_params (they hold the unmodified value); modify and recurse
-        this.operator = operator === 'MATCH' ? 'LIKE' : 'NOT LIKE'
-        this.b.value = `%${this.b.value}%`
-        return this.build(params)
+        // No FULL_TEXT_CLAUSE_FN configured — fall back to LIKE/NOT LIKE.
+        const like_operator = operator === 'MATCH' ? 'LIKE' : 'NOT LIKE'
+        new_params = []
+        this.buildOperand(this.a, new_params)
+        new_params.push(`%${this.b.value}%`)
+        expression = `${a} ${like_operator} ?`
       }
     } else {
       expression = `${a} ${operator} ${b}`

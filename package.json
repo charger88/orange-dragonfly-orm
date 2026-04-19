@@ -29,14 +29,10 @@
     "url": "git+https://github.com/charger88/orange-dragonfly-orm.git"
   },
   "scripts": {
-    "example": "npx tsx examples/example.ts",
-    "example:builder": "npx tsx examples/builder-example.ts",
-    "example:readme": "npx tsx examples/readme-example.ts",
-    "generate-docs": "npx tsx generate-docs.ts",
+    "example": "npx tsx example/example.ts",
     "build": "tsup",
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "benchmark": "npx tsx tests/benchmark/run.ts",
     "eslint": "eslint ./src ./tests",
     "eslint:fix": "eslint --fix ./src ./tests",
     "prepublishOnly": "npm run build"
@@ -48,7 +44,7 @@
     "query"
   ],
   "author": {
-    "name": "Michael Kelner",
+    "name": "Mike Kelner",
     "email": "mikhail.kelner@gmail.com",
     "url": "https://www.michaelkelner.com/"
   },

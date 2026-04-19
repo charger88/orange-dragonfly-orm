@@ -1,5 +1,6 @@
 import RawSQL from '../src/raw-sql'
 import UpdateQuery from '../src/update-query'
+import { normalizeSQL } from './test-helpers'
 
 test('update-simple', () => {
   const data = [false, '12345678', 'admin']
@@ -9,7 +10,7 @@ test('update-simple', () => {
       'password': data[1],
     },
   )
-  expect(q.sql).toBe('UPDATE users SET users.admin = ?, users.password = ? WHERE users.username = ?')
+  expect(normalizeSQL(q.sql)).toBe('UPDATE users SET users.admin = ?, users.password = ? WHERE users.username = ?')
   expect(q.params).toEqual(Object.values(data))
 })
 
@@ -21,6 +22,6 @@ test('update-with-raw-sql', () => {
       'password': new RawSQL('UNIX_TIMESTAMP()'),
     },
   )
-  expect(q.sql).toBe('UPDATE users SET users.admin = ?, users.password = UNIX_TIMESTAMP() WHERE users.username = ?')
+  expect(normalizeSQL(q.sql)).toBe('UPDATE users SET users.admin = ?, users.password = UNIX_TIMESTAMP() WHERE users.username = ?')
   expect(q.params).toEqual(Object.values(data))
 })

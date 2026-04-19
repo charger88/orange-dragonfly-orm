@@ -3,6 +3,7 @@ import SelectQuery from './select-query'
 import UpdateQuery from './update-query'
 import DeleteQuery from './delete-query'
 import type Relation from './relation'
+import { OrangeDatabaseInputError } from './errors'
 import type { IActiveRecordConstructor, IActiveRecordInstance, SelectOptions } from './types'
 
 class ActiveRecord implements IActiveRecordInstance {
@@ -28,6 +29,11 @@ class ActiveRecord implements IActiveRecordInstance {
     return this.registered_models[class_name]
   }
 
+  /** Clears all registered models. Useful for test isolation. */
+  static resetRegisteredModels(): void {
+    this.registered_models = {}
+  }
+
   static get id_key(): string {
     return 'id'
   }
@@ -40,13 +46,22 @@ class ActiveRecord implements IActiveRecordInstance {
     return {}
   }
 
+  /**
+   * Derives the table name from the class name by converting CamelCase to snake_case.
+   * Consecutive uppercase runs are kept together (e.g. `HTMLParser` → `html_parser`).
+   *
+   * **Minification warning**: this getter relies on `this.name`, which bundlers/minifiers
+   * may shorten to a single character or empty string. If you bundle application code that
+   * subclasses `ActiveRecord`, ensure your bundler preserves class names (e.g. tsup/esbuild
+   * `keepNames: true`), or override this getter in each model to return a literal string.
+   */
   static get table(): string {
     const class_name = this.name
     let table_name = ''
-    const uppercase_status: Array<RegExpMatchArray | null | boolean> = class_name.split('').map(x => x.match('[A-Z0-9]'))
-    uppercase_status.push(true)
+    const is_upper = class_name.split('').map(x => /[A-Z0-9]/.test(x))
+    is_upper.push(true)
     for (let i = 0; i < class_name.length; i++) {
-      if (i && uppercase_status[i] && !(uppercase_status[i - 1] && uppercase_status[i + 1])) {
+      if (i && is_upper[i] && !(is_upper[i - 1] && is_upper[i + 1])) {
         table_name += '_'
       }
       table_name += class_name[i]
@@ -70,18 +85,29 @@ class ActiveRecord implements IActiveRecordInstance {
     return this._prepareFilteredQuery(new DeleteQuery(this.table, this as unknown as IActiveRecordConstructor), include_deleted)
   }
 
-  static _prepareFilteredQuery(query: SelectQuery, include_deleted: boolean): SelectQuery
-  static _prepareFilteredQuery(query: UpdateQuery, include_deleted: boolean): UpdateQuery
-  static _prepareFilteredQuery(query: DeleteQuery, include_deleted: boolean): DeleteQuery
-  static _prepareFilteredQuery(query: SelectQuery | UpdateQuery | DeleteQuery, include_deleted: boolean): SelectQuery | UpdateQuery | DeleteQuery {
+  protected static _prepareFilteredQuery(query: SelectQuery, include_deleted: boolean): SelectQuery
+  protected static _prepareFilteredQuery(query: UpdateQuery, include_deleted: boolean): UpdateQuery
+  protected static _prepareFilteredQuery(query: DeleteQuery, include_deleted: boolean): DeleteQuery
+  protected static _prepareFilteredQuery(query: SelectQuery | UpdateQuery | DeleteQuery, include_deleted: boolean): SelectQuery | UpdateQuery | DeleteQuery {
     if (this.special_fields.includes('deleted_at') && !include_deleted) {
       query.whereAnd('deleted_at', null)
     }
     return query
   }
 
+  /**
+   * Returns `true` when no other record in the table has the same values for `fields`.
+   * The current record (by `id_key`) is excluded from the check when it has an id set.
+   *
+   * @note `id = 0` is treated as unsaved (no id), so records with PK 0 are **not** excluded
+   * from the uniqueness check. This is consistent with `save()` treating id 0 as a new record.
+   *
+   * @param fields - Column names that together must be unique.
+   * @param ignore_null - When `true`, returns `true` immediately if any of the given
+   *   fields is `null` on this instance (treat null as always-unique).
+   */
   async isUnique(fields: string[], ignore_null = false): Promise<boolean> {
-    const q = (this.constructor as typeof ActiveRecord).selectQuery()
+    const q = this._cls.selectQuery()
     for (const field of fields) {
       if ((this.data[field] === null) && ignore_null) {
         return true
@@ -89,7 +115,7 @@ class ActiveRecord implements IActiveRecordInstance {
       q.whereAnd(field, this.data[field])
     }
     if (this.id) {
-      q.whereAndNot((this.constructor as typeof ActiveRecord).id_key, this.id)
+      q.whereAndNot(this._cls.id_key, this.id)
     }
     return !(await q.selectOne())
   }
@@ -138,21 +164,35 @@ class ActiveRecord implements IActiveRecordInstance {
     return await this.selectQuery(include_deleted).select() as IActiveRecordInstance[]
   }
 
+  /**
+   * The record's primary key value, taken from `this.data[id_key]`.
+   *
+   * Returns `null` when the key is absent from `data`.
+   *
+   * **Convention**: a falsy id (including `0`) is treated as "unsaved" throughout
+   * the library. `save()` will INSERT rather than UPDATE, `remove()` will no-op,
+   * and relation loading (for non-`parent` modes) will throw. Do not use `0` as a
+   * real primary key value if you rely on these lifecycle methods.
+   */
   get id(): unknown {
-    return Object.hasOwn(this.data, (this.constructor as typeof ActiveRecord).id_key)
-      ? this.data[(this.constructor as typeof ActiveRecord).id_key]
+    return Object.hasOwn(this.data, this._cls.id_key)
+      ? this.data[this._cls.id_key]
       : null
   }
 
   set id(value: unknown) {
-    this.data[(this.constructor as typeof ActiveRecord).id_key] = value
+    this.data[this._cls.id_key] = value
   }
 
-  _get_relation_object(name: string): Relation {
-    if (!Object.hasOwn((this.constructor as typeof ActiveRecord).available_relations, name)) {
-      throw new Error(`Relation "${name}" is not defined in class "${(this.constructor as typeof ActiveRecord).name}"`)
+  private get _cls(): typeof ActiveRecord {
+    return this.constructor as typeof ActiveRecord
+  }
+
+  protected _get_relation_object(name: string): Relation {
+    if (!Object.hasOwn(this._cls.available_relations, name)) {
+      throw new Error(`Relation "${name}" is not defined in class "${this._cls.name}"`)
     }
-    return (this.constructor as typeof ActiveRecord).available_relations[name]
+    return this._cls.available_relations[name]
   }
 
   async rel(name: string, reload = false): Promise<unknown> {
@@ -178,27 +218,54 @@ class ActiveRecord implements IActiveRecordInstance {
     return this
   }
 
-  async _preSave(_is_new = false): Promise<void> {}
+  protected async _preSave(_is_new = false): Promise<void> {}
 
+  /**
+   * Persists the record. Inserts if `this.id` is falsy; updates otherwise.
+   *
+   * @param data - Optional fields to merge into `this.data` before saving.
+   * Keys prefixed with `':'` are treated as transient/virtual fields and are
+   * stripped before the database write (they are never persisted).
+   *
+   * Auto-managed fields (when listed in `special_fields`):
+   * - `updated_at` — set to the current Unix timestamp on every save.
+   * - `created_at` — set to the current Unix timestamp on insert only.
+   * - `deleted_at` — initialized to `null` on insert.
+   *
+   * These fields are written to `this.data` **before** the DB call. If the DB write
+   * fails the instance retains the updated timestamps, so the in-memory state may be
+   * ahead of the database until the next successful save. This is intentional — it
+   * keeps the pre-save hook's view of `this.data` consistent with what will be sent.
+   *
+   * Lifecycle hooks are called in order: `_preSave` → DB write → `_postSave`.
+   *
+   * @note `id = 0` is treated as falsy — a record with PK 0 is always INSERTed,
+   * never UPDATEd. Avoid using 0 as a real primary key if you rely on `save()`.
+   */
   async save(data: Record<string, unknown> | null = null): Promise<this> {
+    const cls = this._cls
+    if (data && Object.hasOwn(data, cls.id_key)) {
+      if (!this.id || data[cls.id_key] !== this.id) {
+        throw new OrangeDatabaseInputError(`Field "${cls.id_key}" must not be passed to save() — it is managed automatically`)
+      }
+    }
     if (data) {
       this.data = Object.assign(this.data, data)
     }
+    const is_new = !this.id
+    await this._preSave(is_new)
     Object.keys(this.data).filter(k => (k[0] === ':')).forEach(k => {
       delete this.data[k]
     })
-    const cls = this.constructor as typeof ActiveRecord
     if (cls.special_fields.includes('updated_at')) {
       this.data['updated_at'] = cls._now()
     }
-    if (cls.special_fields.includes('created_at') && !this.id) {
+    if (cls.special_fields.includes('created_at') && is_new) {
       this.data['created_at'] = cls._now()
     }
-    if (cls.special_fields.includes('deleted_at') && !this.id) {
+    if (cls.special_fields.includes('deleted_at') && is_new) {
       this.data['deleted_at'] = null
     }
-    const is_new = !this.id
-    await this._preSave(is_new)
     const saveData = Object.assign({}, this.data)
     if (Object.hasOwn(saveData, cls.id_key)) {
       delete saveData[cls.id_key]
@@ -212,13 +279,24 @@ class ActiveRecord implements IActiveRecordInstance {
     return this
   }
 
-  async _postSave(_is_new = false): Promise<void> {}
+  protected async _postSave(_is_new = false): Promise<void> {}
 
-  async _preRemove(): Promise<void> {}
+  protected async _preRemove(): Promise<void> {}
 
+  /**
+   * Deletes or soft-deletes the record.
+   *
+   * - **Soft delete** (default when `deleted_at` is in `special_fields`): sets
+   *   `deleted_at` to the current Unix timestamp.
+   * - **Hard delete**: issues a `DELETE` statement. Forced when `hard = true` or
+   *   when `deleted_at` is not in `special_fields`.
+   *
+   * @note If `this.id` is falsy (including `0`) the method is a no-op — no DB
+   * query is executed. After a successful remove, `this.id` is set to `null`.
+   */
   async remove(hard?: boolean): Promise<this> {
     await this._preRemove()
-    const cls = this.constructor as typeof ActiveRecord
+    const cls = this._cls
     if (this.id) {
       if (hard || !cls.special_fields.includes('deleted_at')) {
         await cls.deleteQuery()
@@ -235,9 +313,14 @@ class ActiveRecord implements IActiveRecordInstance {
     return this
   }
 
-  async _postRemove(): Promise<void> {}
+  protected async _postRemove(): Promise<void> {}
 
-  static _now(): number {
+  /**
+   * Returns the current time as a **Unix timestamp in seconds** (integer).
+   * Auto-managed date fields (`created_at`, `updated_at`, `deleted_at`) are stored
+   * as integers, not datetime strings. Map your database columns accordingly (e.g. `INT`).
+   */
+  protected static _now(): number {
     return Math.floor((new Date()).getTime() / 1000)
   }
 

@@ -49,7 +49,7 @@ class MySQLDriver extends AbstractDB {
     return !!connection && connection.state !== 'disconnected'
   }
 
-  override disconnect(): void {
+  override async disconnect(): Promise<void> {
     const connection = this.connection as DriverConnection | null
     if (connection) {
       try {

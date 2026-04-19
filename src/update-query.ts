@@ -1,6 +1,7 @@
 import Helpers from './helpers'
 import FilteredQuery from './filtered-query'
 import RawSQL from './raw-sql'
+import { OrangeDatabaseError, OrangeDatabaseUnexpectedResultError } from './errors'
 import type { IActiveRecordConstructor, OrderSpec, UpdateOptions } from './types'
 
 class UpdateQuery extends FilteredQuery {
@@ -8,7 +9,7 @@ class UpdateQuery extends FilteredQuery {
     super(table, item_class)
   }
 
-  _buildUpdateSQL(data: Record<string, unknown>, params: unknown[]): string {
+  protected _buildUpdateSQL(data: Record<string, unknown>, params: unknown[]): string {
     return Object.keys(data).map(field => {
       if (data[field] instanceof RawSQL) {
         return `${Helpers.fieldName(field, this.table)} = ${(data[field] as RawSQL).SQL}`
@@ -25,19 +26,36 @@ class UpdateQuery extends FilteredQuery {
     const where_sql = this._buildWhereSQL(params)
     const order_sql = this._buildOrderSQL(order, params)
     const limits_sql = this._buildLimitsSQL(limit, offset)
-    let sql = `UPDATE ${table_sql} SET ${update_sql} ${where_sql} ${order_sql} ${limits_sql}`
-    sql = (this.constructor as typeof UpdateQuery).cleanUpQuery(sql)
+    const sql = [
+      `UPDATE ${table_sql} SET ${update_sql}`,
+      where_sql,
+      order_sql,
+      limits_sql,
+    ].filter(Boolean).join(' ')
     return { sql, params }
   }
 
+  /**
+   * Executes the UPDATE and returns the number of affected rows.
+   *
+   * @returns `affectedRows` from the driver result object.
+   * @note The actual shape of the driver result is driver-defined; this method
+   * trusts the driver to expose an `affectedRows` property.
+   */
   async update(data: Record<string, unknown>, options: UpdateOptions = {}): Promise<number> {
+    if (Object.keys(data).length === 0) {
+      throw new OrangeDatabaseError('update() called with empty data — no fields to set')
+    }
     const query = this.buildRawSQL(
       data,
-      options.limit || null,
-      options.offset || 0,
-      options.order || {},
+      options.limit ?? null,
+      options.offset ?? 0,
+      options.order ?? {},
     )
     const res = await (this.constructor as typeof UpdateQuery).runRawSQL(query.sql, query.params) as Record<string, unknown>
+    if (!Object.hasOwn(res, 'affectedRows')) {
+      throw new OrangeDatabaseUnexpectedResultError('Driver result does not contain "affectedRows"')
+    }
     return res.affectedRows as number
   }
 }

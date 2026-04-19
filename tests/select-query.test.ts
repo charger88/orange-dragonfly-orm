@@ -3,13 +3,14 @@ import QueryClauseGroup from '../src/query-clause-group'
 import QueryClause from '../src/query-clause'
 import RawSQL from '../src/raw-sql'
 import { ORMHelpers } from '../src'
+import { normalizeSQL } from './test-helpers'
 
 test('select-simple', () => {
   const data = ['ronald']
   const q = (new SelectQuery('users'))
     .whereAnd('username', data[0])
     .buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM users WHERE users.username = ?')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM users WHERE users.username = ?')
   expect(q.params).toEqual(data)
 })
 
@@ -18,7 +19,7 @@ test('select-empty-in', () => {
   const q = (new SelectQuery('users'))
     .whereAnd('username', data)
     .buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM users WHERE 1 != 1')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM users WHERE 1 != 1')
   expect(q.params).toEqual(data)
 })
 
@@ -28,13 +29,13 @@ test('select-distinct', () => {
       'field': 'email',
       'distinct': true,
     }])
-  expect(q.sql).toBe('SELECT DISTINCT users.email FROM users')
+  expect(normalizeSQL(q.sql)).toBe('SELECT DISTINCT users.email FROM users')
 })
 
 test('select-distinct-alternate', () => {
   const q = (new SelectQuery('users'))
     .buildRawSQL(['email'], null, null as unknown as number, {}, true)
-  expect(q.sql).toBe('SELECT DISTINCT users.email FROM users')
+  expect(normalizeSQL(q.sql)).toBe('SELECT DISTINCT users.email FROM users')
 })
 
 test('select-raw', () => {
@@ -42,7 +43,7 @@ test('select-raw', () => {
     .buildRawSQL([{
       'raw': '2 + 2',
     }])
-  expect(q.sql).toBe('SELECT 2 + 2 FROM users')
+  expect(normalizeSQL(q.sql)).toBe('SELECT 2 + 2 FROM users')
 })
 
 test('select-total', () => {
@@ -54,7 +55,7 @@ test('select-total', () => {
       'arguments': ['*'],
       'as': 'total',
     }])
-  expect(q.sql).toBe('SELECT COUNT(users.*) as total FROM users WHERE users.username = ?')
+  expect(normalizeSQL(q.sql)).toBe('SELECT COUNT(users.*) as total FROM users WHERE users.username = ?')
   expect(q.params).toEqual(data)
 })
 
@@ -64,7 +65,7 @@ test('select-where', () => {
     .whereGroup(wg => wg.andNot('username', data[0]).andNot('username', data[1]))
     .whereOr('admin', data[2])
     .buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM users WHERE (users.username != ? AND users.username != ?) OR users.admin = ?')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM users WHERE (users.username != ? AND users.username != ?) OR users.admin = ?')
   expect(q.params).toEqual(data)
 })
 
@@ -81,7 +82,7 @@ test('select-where-2', () => {
     })
     .whereOr('admin', data[3])
     .buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM users WHERE ((users.username != ? AND users.position != ?) OR users.name = ?) OR users.admin = ?')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM users WHERE ((users.username != ? AND users.position != ?) OR users.name = ?) OR users.admin = ?')
   expect(q.params).toEqual(data)
 })
 
@@ -90,7 +91,7 @@ test('select-in', () => {
   const q = (new SelectQuery('users'))
     .whereAnd('username', data)
     .buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM users WHERE users.username IN (?, ?)')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM users WHERE users.username IN (?, ?)')
   expect(q.params).toEqual([data[0], data[1]])
 })
 
@@ -99,13 +100,13 @@ test('select-in-duplications', () => {
   const q = (new SelectQuery('users'))
     .whereAnd('username', data)
     .buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM users WHERE users.username IN (?, ?)')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM users WHERE users.username IN (?, ?)')
   expect(q.params).toEqual([data[0], data[1]])
 })
 
 test('select-no-where-limit-offset', () => {
   const q = (new SelectQuery('users')).buildRawSQL('*', 10, 5)
-  expect(q.sql).toBe('SELECT * FROM users LIMIT 10 OFFSET 5')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM users LIMIT 10 OFFSET 5')
   expect(q.params).toEqual([])
 })
 
@@ -114,7 +115,7 @@ test('select-order', () => {
   const q = (new SelectQuery('users'))
     .whereAnd('username', data[0])
     .buildRawSQL('*', null, 0, { 'year': true, 'id': false })
-  expect(q.sql).toBe('SELECT * FROM users WHERE users.username = ? ORDER BY users.year DESC, users.id ASC')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM users WHERE users.username = ? ORDER BY users.year DESC, users.id ASC')
   expect(q.params).toEqual(data)
 })
 
@@ -135,7 +136,7 @@ test('select-special-order', () => {
       },
       'id': false,
     })
-  expect(q.sql).toBe('SELECT * FROM users WHERE users.username = ? ORDER BY FIELD (users.access_class, ?, ?, ?) DESC, FIELD (another_table.t1, ?, ?) ASC, users.id ASC')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM users WHERE users.username = ? ORDER BY FIELD (users.access_class, ?, ?, ?) DESC, FIELD (another_table.t1, ?, ?) ASC, users.id ASC')
   expect(q.params).toEqual([...data, 'a', 'b', 'c', 'test', 2])
 })
 
@@ -144,7 +145,7 @@ test('select-order-strings', () => {
   const q = (new SelectQuery('users'))
     .whereAnd('username', data[0])
     .buildRawSQL('*', null, 0, { 'year': 'desc', 'id': 'asc' })
-  expect(q.sql).toBe('SELECT * FROM users WHERE users.username = ? ORDER BY users.year DESC, users.id ASC')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM users WHERE users.username = ? ORDER BY users.year DESC, users.id ASC')
   expect(q.params).toEqual(data)
 })
 
@@ -152,7 +153,7 @@ test('select-group', () => {
   const q = (new SelectQuery('users'))
     .groupBy('home_state')
     .buildRawSQL(['home_state', { 'function': 'COUNT', 'arguments': ['id'] }], null, 0, { '2': true })
-  expect(q.sql).toBe('SELECT users.home_state, COUNT(users.id) FROM users GROUP BY users.home_state ORDER BY 2 DESC')
+  expect(normalizeSQL(q.sql)).toBe('SELECT users.home_state, COUNT(users.id) FROM users GROUP BY users.home_state ORDER BY 2 DESC')
   expect(q.params).toEqual([])
 })
 
@@ -160,7 +161,7 @@ test('select-group-by-number', () => {
   const q = (new SelectQuery('users'))
     .groupBy(1)
     .buildRawSQL(['home_state', { 'function': 'COUNT', 'arguments': ['id'] }], null, 0, { '2': true })
-  expect(q.sql).toBe('SELECT users.home_state, COUNT(users.id) FROM users GROUP BY 1 ORDER BY 2 DESC')
+  expect(normalizeSQL(q.sql)).toBe('SELECT users.home_state, COUNT(users.id) FROM users GROUP BY 1 ORDER BY 2 DESC')
   expect(q.params).toEqual([])
 })
 
@@ -171,7 +172,7 @@ test('select-join-order', () => {
     .whereAnd('admin', data[0])
     .whereAnd('relatives.relation', data[1])
     .buildRawSQL(['name', 'relatives.name'], null, 0, { 'year': true, 'relatives.id': false })
-  expect(q.sql).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives ON users.id = relatives.user_id WHERE users.admin = ? AND relatives.relation = ? ORDER BY users.year DESC, relatives.id ASC')
+  expect(normalizeSQL(q.sql)).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives ON users.id = relatives.user_id WHERE users.admin = ? AND relatives.relation = ? ORDER BY users.year DESC, relatives.id ASC')
   expect(q.params).toEqual(data)
 })
 
@@ -182,7 +183,7 @@ test('select-join-alias', () => {
     .whereAnd('admin', data[0])
     .whereAnd('relatives.relation', data[1])
     .buildRawSQL(['name', 'relatives.name'])
-  expect(q.sql).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives my_table ON users.id = my_table.user_id WHERE users.admin = ? AND relatives.relation = ?')
+  expect(normalizeSQL(q.sql)).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives my_table ON users.id = my_table.user_id WHERE users.admin = ? AND relatives.relation = ?')
   expect(q.params).toEqual(data)
 })
 
@@ -197,7 +198,7 @@ test('select-join-multiple', () => {
     .whereAnd('admin', data[0])
     .whereAnd('relatives.relation', data[1])
     .buildRawSQL(['name', 'relatives.name'])
-  expect(q.sql).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives my_table ON users.id = relatives.user_id AND users.status = ? WHERE users.admin = ? AND relatives.relation = ?')
+  expect(normalizeSQL(q.sql)).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives my_table ON users.id = relatives.user_id AND users.status = ? WHERE users.admin = ? AND relatives.relation = ?')
   expect(q.params).toEqual([SOME_VALUE].concat(data))
 })
 
@@ -207,7 +208,7 @@ test('select-with-raw-sql', () => {
     .whereAnd('password', new RawSQL('UNIX_TIMESTAMP()'))
     .whereAnd(new RawSQL('MD5(users.username)') as unknown as string, data[0])
     .buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM users WHERE users.password = UNIX_TIMESTAMP() AND MD5(users.username) = ?')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM users WHERE users.password = UNIX_TIMESTAMP() AND MD5(users.username) = ?')
   expect(q.params).toEqual(data)
 })
 
@@ -218,7 +219,7 @@ test('select-with-escape-character', () => {
   const q = (new SelectQuery('users'))
     .whereAnd('limit', data[0])
     .buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM users WHERE users.`limit` = ?')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM users WHERE users.`limit` = ?')
   expect(q.params).toEqual(data)
   ORMHelpers.RESERVED_WORDS = []
   ORMHelpers.ESCAPE_CHAR = ''
@@ -231,7 +232,7 @@ test('select-with-escape-character-for-table', () => {
   const q = (new SelectQuery('limit'))
     .whereAnd('test_value', data[0])
     .buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM `limit` WHERE `limit`.test_value = ?')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM `limit` WHERE `limit`.test_value = ?')
   expect(q.params).toEqual(data)
   ORMHelpers.RESERVED_WORDS = []
   ORMHelpers.ESCAPE_CHAR = ''
@@ -243,7 +244,7 @@ test('select-fake-fulltext-search', () => {
     .where('bio', data[0], 'MATCH')
     .where('comment', data[1], 'NOT MATCH')
     .buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM users WHERE users.bio LIKE ? AND users.comment NOT LIKE ?')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM users WHERE users.bio LIKE ? AND users.comment NOT LIKE ?')
   expect(q.params).toEqual(['%developer%', '%lazy%'])
 })
 
@@ -254,7 +255,7 @@ test('select-mysql-fulltext-search', () => {
     .where('bio', data[0], 'MATCH')
     .where('comment', data[1], 'NOT MATCH')
     .buildRawSQL()
-  expect(q.sql).toBe('SELECT * FROM users WHERE MATCH(users.bio) AGAINST (?) AND NOT MATCH(users.comment) AGAINST (?)')
+  expect(normalizeSQL(q.sql)).toBe('SELECT * FROM users WHERE MATCH(users.bio) AGAINST (?) AND NOT MATCH(users.comment) AGAINST (?)')
   expect(q.params).toEqual(data)
   ORMHelpers.FULL_TEXT_CLAUSE_FN = null
 })
