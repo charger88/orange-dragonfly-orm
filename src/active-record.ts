@@ -13,7 +13,7 @@ class ActiveRecord implements IActiveRecordInstance {
   relations: Record<string, unknown>
 
   constructor(data?: Record<string, unknown>) {
-    this.data = data ? Object.assign({}, data) : {}
+    this.data = data ? structuredClone(data) : {}
     this.relations = {}
   }
 
@@ -253,7 +253,6 @@ class ActiveRecord implements IActiveRecordInstance {
       this.data = Object.assign(this.data, data)
     }
     const is_new = !this.id
-    await this._preSave(is_new)
     Object.keys(this.data).filter(k => (k[0] === ':')).forEach(k => {
       delete this.data[k]
     })
@@ -266,7 +265,8 @@ class ActiveRecord implements IActiveRecordInstance {
     if (cls.special_fields.includes('deleted_at') && is_new) {
       this.data['deleted_at'] = null
     }
-    const saveData = Object.assign({}, this.data)
+    await this._preSave(is_new)
+    const saveData = structuredClone(this.data)
     if (Object.hasOwn(saveData, cls.id_key)) {
       delete saveData[cls.id_key]
     }

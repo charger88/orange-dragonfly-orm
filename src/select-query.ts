@@ -129,7 +129,7 @@ class SelectQuery extends FilteredQuery {
   }
 
   async selectOne(options: SelectOptions = {}): Promise<IActiveRecordInstance | Record<string, unknown> | null> {
-    const opts = Object.assign({}, options)
+    const opts = structuredClone(options)
     opts.limit = 1
     const res = await this.select(opts)
     return res.length === 1 ? res[0] : null
