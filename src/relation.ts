@@ -35,7 +35,7 @@ class Relation {
     rel_obj.via_a_key = this.via_a_key
     rel_obj.via_b_key = this.via_b_key
     rel_obj.specify_functions = [...this.specify_functions]
-    rel_obj.select_params = Object.assign({}, this.select_params)
+    rel_obj.select_params = structuredClone(this.select_params)
     return rel_obj
   }
 

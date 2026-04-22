@@ -1,4 +1,3 @@
-.idea
 src
 tests
 examples
@@ -8,4 +7,3 @@ tsconfig.json
 tsup.config.ts
 jest.config.cjs
 eslint.config.js
-generate-docs.ts
