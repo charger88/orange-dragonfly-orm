@@ -2,12 +2,12 @@ import Helpers from './helpers'
 import AbstractQuery from './abstract-query'
 import QueryClauseGroup from './query-clause-group'
 import { OrangeDatabaseInputError } from './errors'
-import type { IActiveRecordConstructor, OrderSpec, OrderFieldObject } from './types'
+import type { IActiveRecordConstructor, IActiveRecordInstance, OrderSpec, OrderFieldObject, WhereOperator } from './types'
 
-class FilteredQuery extends AbstractQuery {
+class FilteredQuery<T extends IActiveRecordInstance = IActiveRecordInstance> extends AbstractQuery<T> {
   whereConditions: QueryClauseGroup
 
-  constructor(table: string, item_class: IActiveRecordConstructor | null = null) {
+  constructor(table: string, item_class: IActiveRecordConstructor<T> | null = null) {
     super(table, item_class)
     this.whereConditions = new QueryClauseGroup([], false, this.table)
   }
@@ -60,7 +60,7 @@ class FilteredQuery extends AbstractQuery {
    * @param operator - SQL comparison operator (default `'='`).
    * @param or - When `true` the clause is joined with `OR`; otherwise `AND`.
    */
-  where(field: string, value: unknown, operator = '=', or = false): this {
+  where(field: string, value: unknown, operator: WhereOperator = '=', or = false): this {
     this.whereConditions.exp(field, value, operator, or)
     return this
   }

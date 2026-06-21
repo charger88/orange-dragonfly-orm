@@ -12,11 +12,11 @@ type JoinedTable = {
   clause: QueryClauseGroup
 }
 
-class SelectQuery extends FilteredQuery {
+class SelectQuery<T extends IActiveRecordInstance = IActiveRecordInstance> extends FilteredQuery<T> {
   joined_tables: JoinedTable[]
   group_by: Array<string | number>
 
-  constructor(table: string, item_class: IActiveRecordConstructor | null = null) {
+  constructor(table: string, item_class: IActiveRecordConstructor<T> | null = null) {
     super(table, item_class)
     this.joined_tables = []
     this.group_by = []
@@ -111,27 +111,57 @@ class SelectQuery extends FilteredQuery {
     return { sql, params }
   }
 
-  async select(options: SelectOptions = {}): Promise<IActiveRecordInstance[] | Record<string, unknown>[]> {
-    const fields = options.fields || '*'
-    const query = this.buildRawSQL(
-      fields,
-      options.limit ?? null,
-      options.offset ?? 0,
-      options.order ?? {},
-      !!options.distinct,
-    )
+  /**
+   * Executes the query and returns hydrated model instances.
+   *
+   * Always selects all columns (`*`). To retrieve specific columns as plain objects
+   * use {@link selectColumns} instead.
+   *
+   */
+  async select(options: SelectOptions = {}): Promise<T[]> {
+    if (Object.hasOwn(options, 'fields')) {
+      console.warn('SelectQuery.select(): the `fields` option is deprecated and ignored. Use selectColumns() to query specific columns.')
+    }
+    const query = this.buildRawSQL('*', options.limit ?? null, options.offset ?? 0, options.order ?? {}, !!options.distinct)
     const res = await (this.constructor as typeof SelectQuery).runRawSQL(query.sql, query.params) as Record<string, unknown>[]
-    const return_objects = this.item_class && (
-      (fields === '*') ||
-      (Array.isArray(fields) && (fields.length === 1) && (fields[0] === `${this.table}.*`))
-    )
-    return return_objects ? res.map(record => new this.item_class!(record)) : res
+    return this.item_class ? res.map(record => new this.item_class!(record)) : res as unknown as T[]
   }
 
-  async selectOne(options: SelectOptions = {}): Promise<IActiveRecordInstance | Record<string, unknown> | null> {
+  /**
+   * Executes the query and returns the first hydrated model instance, or `null`.
+   *
+   * Always selects all columns (`*`). To retrieve specific columns as a plain object
+   * use {@link selectRow} instead.
+   */
+  async selectOne(options: SelectOptions = {}): Promise<T | null> {
     const opts = structuredClone(options)
     opts.limit = 1
     const res = await this.select(opts)
+    return res.length === 1 ? res[0] : null
+  }
+
+  /**
+   * Executes the query selecting only the specified columns and returns plain objects.
+   *
+   * @param fields - Columns to include in the SELECT list.
+   * @param options - Limit, offset, order, and distinct options.
+   */
+  async selectColumns(fields: SelectFields, options: SelectOptions = {}): Promise<Record<string, unknown>[]> {
+    const query = this.buildRawSQL(fields, options.limit ?? null, options.offset ?? 0, options.order ?? {}, !!options.distinct)
+    return await (this.constructor as typeof SelectQuery).runRawSQL(query.sql, query.params) as Record<string, unknown>[]
+  }
+
+  /**
+   * Executes the query selecting only the specified columns and returns the first
+   * plain object, or `null`.
+   *
+   * @param fields - Columns to include in the SELECT list.
+   * @param options - Limit, offset, order, and distinct options.
+   */
+  async selectRow(fields: SelectFields, options: SelectOptions = {}): Promise<Record<string, unknown> | null> {
+    const opts = structuredClone(options)
+    opts.limit = 1
+    const res = await this.selectColumns(fields, opts)
     return res.length === 1 ? res[0] : null
   }
 
@@ -145,21 +175,20 @@ class SelectQuery extends FilteredQuery {
    * group count.
    */
   async total(id_key: string | null = null): Promise<number> {
-    const res = await this.select({
-      fields: [{
-        function: 'COUNT',
-        arguments: [id_key ? id_key : (this.item_class ? this.item_class.id_key : 'id')],
-        as: 'total',
-      }],
-    }) as Array<Record<string, unknown>>
+    const fields: SelectFields = [{
+      function: 'COUNT',
+      arguments: [id_key ?? (this.item_class ? this.item_class.id_key : 'id')],
+      as: 'total',
+    }]
+    const query = this.buildRawSQL(fields)
+    const res = await (this.constructor as typeof SelectQuery).runRawSQL(query.sql, query.params) as Record<string, unknown>[]
     return res[0]['total'] as number
   }
 
   async exists(id_key: string | null = null): Promise<boolean> {
-    const res = await this.select({
-      fields: [id_key ? id_key : (this.item_class ? this.item_class.id_key : 'id')],
-      limit: 1,
-    })
+    const fields: SelectFields = [id_key ?? (this.item_class ? this.item_class.id_key : 'id')]
+    const query = this.buildRawSQL(fields, 1)
+    const res = await (this.constructor as typeof SelectQuery).runRawSQL(query.sql, query.params) as Record<string, unknown>[]
     return !!res.length
   }
 }

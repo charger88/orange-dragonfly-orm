@@ -199,7 +199,7 @@ test('select-join-multiple', () => {
     .whereAnd('relatives.relation', data[1])
     .buildRawSQL(['name', 'relatives.name'])
   expect(normalizeSQL(q.sql)).toBe('SELECT users.name, relatives.name FROM users LEFT JOIN relatives my_table ON users.id = relatives.user_id AND users.status = ? WHERE users.admin = ? AND relatives.relation = ?')
-  expect(q.params).toEqual([SOME_VALUE].concat(data))
+  expect(q.params).toEqual([SOME_VALUE, ...data])
 })
 
 test('select-with-raw-sql', () => {

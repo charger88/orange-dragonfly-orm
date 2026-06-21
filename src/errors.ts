@@ -33,14 +33,33 @@ export class OrangeDatabaseInputError extends OrangeDatabaseError {
  * } catch (e) {
  *   if (e instanceof OrangeDatabaseQueryError) {
  *     console.error('Query failed:', e.message)
+ *     console.error('SQL:', e.sql)
+ *     console.error('Params:', e.params)
  *     console.error('Driver cause:', e.cause)
  *   }
  * }
  */
 export class OrangeDatabaseQueryError extends OrangeDatabaseError {
-  constructor(message: string, options?: ErrorOptions) {
+  readonly sql: string
+  readonly params: unknown[]
+
+  constructor(message: string, sql: string, params: unknown[], options?: ErrorOptions) {
     super(message, options)
     this.name = 'OrangeDatabaseQueryError'
+    this.sql = sql
+    this.params = params
+  }
+}
+
+/**
+ * Thrown when the ORM API is used incorrectly — e.g. calling a removed or
+ * renamed method, or passing an option that belongs to a different method.
+ * Distinct from {@link OrangeDatabaseInputError}, which is for bad data values.
+ */
+export class OrangeDatabaseUsageError extends OrangeDatabaseError {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options)
+    this.name = 'OrangeDatabaseUsageError'
   }
 }
 

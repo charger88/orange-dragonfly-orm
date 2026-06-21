@@ -1,9 +1,9 @@
 import Helpers from './helpers'
 import AbstractDB from './abstract-db'
 import { OrangeDatabaseError } from './errors'
-import type { IActiveRecordConstructor } from './types'
+import type { IActiveRecordConstructor, IActiveRecordInstance } from './types'
 
-class AbstractQuery {
+class AbstractQuery<T extends IActiveRecordInstance = IActiveRecordInstance> {
   /**
    * The single registered database adapter for the entire process.
    *
@@ -17,9 +17,9 @@ class AbstractQuery {
   protected static db_object: AbstractDB | null = null
 
   table: string
-  item_class: IActiveRecordConstructor | null
+  item_class: IActiveRecordConstructor<T> | null
 
-  constructor(table: string, item_class: IActiveRecordConstructor | null = null) {
+  constructor(table: string, item_class: IActiveRecordConstructor<T> | null = null) {
     this.table = Helpers.tableName(table)
     this.item_class = item_class
   }
