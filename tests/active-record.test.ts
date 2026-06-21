@@ -1,4 +1,5 @@
 import ActiveRecord from '../src/active-record'
+import type { DeleteOptions, FieldFunctionObject, IActiveRecordConstructor, IActiveRecordInstance, IQueryBuilder, OrderSpec, SelectFields, SelectOptions, UpdateOptions } from '../src'
 import { normalizeSQL } from './test-helpers'
 
 class SimpleActiveRecord extends ActiveRecord {}
@@ -81,6 +82,60 @@ test('active-record-query-methods', () => {
   expect(SimpleActiveRecord.selectQuery().constructor.name).toBe('SelectQuery')
   expect(SimpleActiveRecord.updateQuery().constructor.name).toBe('UpdateQuery')
   expect(SimpleActiveRecord.deleteQuery().constructor.name).toBe('DeleteQuery')
+})
+
+test('active-record-constructor-select-query-interface', () => {
+  const model: IActiveRecordConstructor<SimpleActiveRecord> = SimpleActiveRecord
+  const selectOptions: SelectOptions = { limit: 1, order: { id: 'desc' } }
+  const selectFields: SelectFields = ['id', 'name']
+  const q = model.selectQuery()
+  q
+    .whereAndNot('id', 0)
+    .whereOr('name', 'Donald')
+    .whereOrNot('status', 'archived')
+    .where('score', 1, '>')
+    .whereGroup(group => group.and('rank', [1, 2]))
+    .joinTable('LEFT', 'related_records', 'id', 'simple_active_record_id')
+    .groupBy('name')
+    .buildRawSQL(selectFields, selectOptions.limit, selectOptions.offset, selectOptions.order)
+  const select: IQueryBuilder<SimpleActiveRecord>['select'] = q.select
+  const selectOne: IQueryBuilder<SimpleActiveRecord>['selectOne'] = q.selectOne
+  const selectColumns: IQueryBuilder<SimpleActiveRecord>['selectColumns'] = q.selectColumns
+  const selectRow: IQueryBuilder<SimpleActiveRecord>['selectRow'] = q.selectRow
+  const total: IQueryBuilder<SimpleActiveRecord>['total'] = q.total
+  const exists: IQueryBuilder<SimpleActiveRecord>['exists'] = q.exists
+  expect([select, selectOne, selectColumns, selectRow, total, exists].every(fn => typeof fn === 'function')).toBe(true)
+})
+
+test('active-record-constructor-static-interface', () => {
+  const model: IActiveRecordConstructor<SimpleActiveRecord> = SimpleActiveRecord
+  const order: OrderSpec = { id: 'desc' }
+  const field: FieldFunctionObject = { function: 'COUNT', arguments: ['*'], as: 'total' }
+  const updateOptions: UpdateOptions = { limit: 1, order }
+  const deleteOptions: DeleteOptions = { limit: 1, order }
+  const insert = model.insertQuery().buildRawSQL(['name'], [['Donald']])
+  const update = model.updateQuery().whereAnd('id', 1).buildRawSQL({ name: 'Duck' }, updateOptions.limit, updateOptions.offset, updateOptions.order)
+  const remove = model.deleteQuery().whereAnd('id', 1).buildRawSQL(deleteOptions.limit, deleteOptions.offset, deleteOptions.order)
+  const all: IActiveRecordConstructor<SimpleActiveRecord>['all'] = model.all
+  const find: IActiveRecordConstructor<SimpleActiveRecord>['find'] = model.find
+  const loadRelations: IActiveRecordConstructor<SimpleActiveRecord>['loadRelations'] = model.loadRelations
+  expect(normalizeSQL(insert.sql)).toBe('INSERT INTO simple_active_record (name) VALUES (?)')
+  expect(normalizeSQL(update.sql)).toBe('UPDATE simple_active_record SET simple_active_record.name = ? WHERE simple_active_record.id = ? ORDER BY simple_active_record.id DESC LIMIT 1')
+  expect(normalizeSQL(remove.sql)).toBe('DELETE FROM simple_active_record WHERE simple_active_record.id = ? ORDER BY simple_active_record.id DESC LIMIT 1')
+  expect(field.as).toBe('total')
+  expect([all, find, loadRelations].every(fn => typeof fn === 'function')).toBe(true)
+})
+
+test('active-record-instance-interface', () => {
+  const record: IActiveRecordInstance = new SimpleActiveRecord({ id: 1 })
+  const rel: IActiveRecordInstance['rel'] = record.rel
+  const customRelQuery: IActiveRecordInstance['custom_rel_query'] = record.custom_rel_query
+  const resetRelations: IActiveRecordInstance['resetRelations'] = record.resetRelations
+  const save: IActiveRecordInstance['save'] = record.save
+  const remove: IActiveRecordInstance['remove'] = record.remove
+  const isUnique: IActiveRecordInstance['isUnique'] = record.isUnique
+  expect(record.id).toBe(1)
+  expect([rel, customRelQuery, resetRelations, save, remove, isUnique].every(fn => typeof fn === 'function')).toBe(true)
 })
 
 test('active-record-simple-insert', () => {

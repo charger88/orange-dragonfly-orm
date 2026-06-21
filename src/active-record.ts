@@ -2,6 +2,7 @@ import InsertQuery from './insert-query'
 import SelectQuery from './select-query'
 import UpdateQuery from './update-query'
 import DeleteQuery from './delete-query'
+import FilteredQuery from './filtered-query'
 import type Relation from './relation'
 import { OrangeDatabaseInputError } from './errors'
 import type { IActiveRecordConstructor, IActiveRecordInstance, SelectOptions } from './types'
@@ -73,8 +74,15 @@ class ActiveRecord implements IActiveRecordInstance {
     return new InsertQuery(this.table, this as unknown as IActiveRecordConstructor)
   }
 
-  static selectQuery(include_deleted = false): SelectQuery {
-    return this._prepareFilteredQuery(new SelectQuery(this.table, this as unknown as IActiveRecordConstructor), include_deleted)
+  static selectQuery<T extends ActiveRecord>(
+    this: abstract new (data?: Record<string, unknown>) => T,
+    include_deleted = false,
+  ): SelectQuery<T> {
+    const cls = this as unknown as typeof ActiveRecord
+    return cls._prepareFilteredQuery(
+      new SelectQuery<T>(cls.table, this as unknown as IActiveRecordConstructor<T>),
+      include_deleted,
+    )
   }
 
   static updateQuery(include_deleted = false): UpdateQuery {
@@ -85,10 +93,7 @@ class ActiveRecord implements IActiveRecordInstance {
     return this._prepareFilteredQuery(new DeleteQuery(this.table, this as unknown as IActiveRecordConstructor), include_deleted)
   }
 
-  protected static _prepareFilteredQuery(query: SelectQuery, include_deleted: boolean): SelectQuery
-  protected static _prepareFilteredQuery(query: UpdateQuery, include_deleted: boolean): UpdateQuery
-  protected static _prepareFilteredQuery(query: DeleteQuery, include_deleted: boolean): DeleteQuery
-  protected static _prepareFilteredQuery(query: SelectQuery | UpdateQuery | DeleteQuery, include_deleted: boolean): SelectQuery | UpdateQuery | DeleteQuery {
+  protected static _prepareFilteredQuery<Q extends FilteredQuery>(query: Q, include_deleted: boolean): Q {
     if (this.special_fields.includes('deleted_at') && !include_deleted) {
       query.whereAnd('deleted_at', null)
     }
@@ -120,10 +125,15 @@ class ActiveRecord implements IActiveRecordInstance {
     return !(await q.selectOne())
   }
 
-  static async loadRelations(objects: IActiveRecordInstance[], relations: string[] | null = null): Promise<IActiveRecordInstance[]> {
+  static async loadRelations<T extends ActiveRecord>(
+    this: abstract new (data?: Record<string, unknown>) => T,
+    objects: T[],
+    relations: string[] | null = null,
+  ): Promise<T[]> {
+    const cls = this as unknown as typeof ActiveRecord
     const sub_relations: Record<string, string[]> = {}
     if (relations === null) {
-      relations = Object.keys(this.available_relations)
+      relations = Object.keys(cls.available_relations)
     } else {
       for (const rel_name of relations) {
         if (rel_name.includes(':')) {
@@ -137,31 +147,40 @@ class ActiveRecord implements IActiveRecordInstance {
       relations = relations.filter(r => !r.includes(':'))
     }
     for (const rel_name of relations) {
-      if (!Object.hasOwn(this.available_relations, rel_name)) {
-        throw new Error(`Relation ${rel_name} does not exist in model ${this.name}`)
+      if (!Object.hasOwn(cls.available_relations, rel_name)) {
+        throw new Error(`Relation ${rel_name} does not exist in model ${cls.name}`)
       }
     }
     await Promise.all(relations.map(async rel_name => {
-      const res = await this.available_relations[rel_name].selectForMultiple(objects)
+      const res = await cls.available_relations[rel_name].selectForMultiple(objects)
       if (Object.hasOwn(sub_relations, rel_name)) {
         const nested = Object.values(res)
           .reduce((a: IActiveRecordInstance[], c) => a.concat(Array.isArray(c) ? c : [c as IActiveRecordInstance]), [])
           .filter((r): r is IActiveRecordInstance => r !== null)
-        await this.available_relations[rel_name].b!.loadRelations(nested, sub_relations[rel_name])
+        await cls.available_relations[rel_name].b!.loadRelations(nested, sub_relations[rel_name])
       }
       for (const object of objects) {
-        object.relations[rel_name] = res[object.id as string | number]
+        object.relations[rel_name] = res[object.id!]
       }
     }))
     return objects
   }
 
-  static async find(id: unknown, include_deleted = false): Promise<IActiveRecordInstance | null> {
-    return await this.selectQuery(include_deleted).whereAnd(this.id_key, id).selectOne() as IActiveRecordInstance | null
+  static async find<T extends ActiveRecord>(
+    this: abstract new (data?: Record<string, unknown>) => T,
+    id: number,
+    include_deleted = false,
+  ): Promise<T | null> {
+    const cls = this as unknown as typeof ActiveRecord
+    return await cls.selectQuery(include_deleted).whereAnd(cls.id_key, id).selectOne() as T | null
   }
 
-  static async all(include_deleted = false): Promise<IActiveRecordInstance[]> {
-    return await this.selectQuery(include_deleted).select() as IActiveRecordInstance[]
+  static async all<T extends ActiveRecord>(
+    this: abstract new (data?: Record<string, unknown>) => T,
+    include_deleted = false,
+  ): Promise<T[]> {
+    const cls = this as unknown as typeof ActiveRecord
+    return await cls.selectQuery(include_deleted).select() as T[]
   }
 
   /**
@@ -174,13 +193,13 @@ class ActiveRecord implements IActiveRecordInstance {
    * and relation loading (for non-`parent` modes) will throw. Do not use `0` as a
    * real primary key value if you rely on these lifecycle methods.
    */
-  get id(): unknown {
+  get id(): number | null {
     return Object.hasOwn(this.data, this._cls.id_key)
-      ? this.data[this._cls.id_key]
+      ? this.data[this._cls.id_key] as number
       : null
   }
 
-  set id(value: unknown) {
+  set id(value: number | null) {
     this.data[this._cls.id_key] = value
   }
 

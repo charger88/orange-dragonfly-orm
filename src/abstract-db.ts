@@ -140,8 +140,8 @@ abstract class AbstractDB {
    * @param sql - The SQL string, using `?` as a positional placeholder.
    * @param params - Values bound to each `?` placeholder in order.
    * @returns The raw result object from the driver (shape depends on the driver implementation).
-   * @throws {OrangeDatabaseQueryError} when the driver reports a query error, with the
-   *   original driver error preserved as `cause`.
+   * @throws {OrangeDatabaseQueryError} when the driver reports a query error, with `sql`,
+   *   `params`, and the original driver error preserved as `cause`.
    */
   q(sql: string, params?: unknown[]): Promise<unknown> {
     const debug = this.config['debug']
@@ -156,7 +156,7 @@ abstract class AbstractDB {
       this.getConnection().then(c => {
         c.query(sql, params || [], (err, res) => {
           if (err) {
-            reject(new OrangeDatabaseQueryError('DB Query problem', { cause: err }))
+            reject(new OrangeDatabaseQueryError('DB Query problem', sql, params ?? [], { cause: err }))
           } else {
             resolve(res)
           }

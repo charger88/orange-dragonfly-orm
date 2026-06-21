@@ -1,3 +1,10 @@
+import type DeleteQuery from './delete-query'
+import type InsertQuery from './insert-query'
+import type QueryClauseGroup from './query-clause-group'
+import type Relation from './relation'
+import type SelectQuery from './select-query'
+import type UpdateQuery from './update-query'
+
 export type FieldFunctionObject = {
   distinct?: boolean
   /**
@@ -23,6 +30,9 @@ export type FieldFunctionObject = {
  */
 export type JoinType = 'INNER' | 'LEFT' | 'RIGHT' | 'FULL' | 'CROSS' | 'LEFT OUTER' | 'RIGHT OUTER' | 'FULL OUTER'
 
+export type WhereOperator = '=' | '!=' | '<>' | '>' | '<' | '>=' | '<=' |
+  'LIKE' | 'NOT LIKE' | 'MATCH' | 'NOT MATCH' | 'IN' | 'NOT IN' | 'IS' | 'IS NOT' | '&' | '|'
+
 export type FullTextClauseFn = (operator: string, a: string, b: string) => string
 
 export type ClauseOperand = {
@@ -30,29 +40,61 @@ export type ClauseOperand = {
   value?: unknown
 }
 
+export interface IActiveRecordInstance {
+  data: Record<string, unknown>
+  id: number | null
+  relations: Record<string, unknown>
+  isUnique(fields: string[], ignore_null?: boolean): Promise<boolean>
+  rel(name: string, reload?: boolean): Promise<unknown>
+  custom_rel_query(name: string, custom_specify_function?: ((query: SelectQuery) => void) | null, custom_select_params?: SelectOptions | null): Promise<unknown>
+  resetRelations(relation?: string | null): this
+  save(data?: Record<string, unknown> | null): Promise<this>
+  remove(hard?: boolean): Promise<this>
+  toString(): string
+}
+
 /**
- * Minimal interface for a query builder that supports WHERE clauses.
+ * Public SelectQuery surface returned by `IActiveRecordConstructor.selectQuery`.
  * Used as the return type of `IActiveRecordConstructor.selectQuery` to avoid
  * a circular dependency between `types.ts` and `select-query.ts`.
  * At runtime the returned object is always a full `SelectQuery` instance.
  */
-export interface IQueryBuilder {
+export interface IQueryBuilder<T extends IActiveRecordInstance = IActiveRecordInstance> {
+  whereOrNot(field: string, value: unknown): this
+  whereAndNot(field: string, value: unknown): this
+  whereOr(field: string, value: unknown): this
   whereAnd(field: string, value: unknown): this
+  where(field: string, value: unknown, operator?: WhereOperator, or?: boolean): this
+  whereGroup(callback: (group: QueryClauseGroup) => void, or?: boolean): this
+  joinTable(join_type: JoinType, table_name: string, key: string, foreign_key: string, operator?: string, alias?: string | null): this
+  joinTableCustom(join_type: JoinType, table_name: string, clause: QueryClauseGroup, alias?: string | null): this
+  groupBy(field_name: string | number): this
+  buildRawSQL(fields?: SelectFields, limit?: number | null, offset?: number, order?: OrderSpec, distinct?: boolean): { sql: string; params: unknown[] }
+  select(options?: SelectOptions): Promise<T[]>
+  selectOne(options?: SelectOptions): Promise<T | null>
+  selectColumns(fields: SelectFields, options?: SelectOptions): Promise<Record<string, unknown>[]>
+  selectRow(fields: SelectFields, options?: SelectOptions): Promise<Record<string, unknown> | null>
+  total(id_key?: string | null): Promise<number>
+  exists(id_key?: string | null): Promise<boolean>
 }
 
-export interface IActiveRecordInstance {
-  data: Record<string, unknown>
-  id: unknown
-  relations: Record<string, unknown>
-}
-
-export interface IActiveRecordConstructor {
-  new(data?: Record<string, unknown>): IActiveRecordInstance
+export interface IActiveRecordConstructor<T extends IActiveRecordInstance = IActiveRecordInstance> {
+  new(data?: Record<string, unknown>): T
   readonly id_key: string
   readonly table: string
   readonly name: string
-  selectQuery(include_deleted?: boolean): IQueryBuilder
-  loadRelations(objects: IActiveRecordInstance[], relations?: string[] | null): Promise<IActiveRecordInstance[]>
+  readonly special_fields: string[]
+  readonly available_relations: Record<string, Relation>
+  registerModel(model_class: IActiveRecordConstructor): IActiveRecordConstructor
+  model(class_name: string): IActiveRecordConstructor
+  resetRegisteredModels(): void
+  insertQuery(): InsertQuery
+  selectQuery(include_deleted?: boolean): IQueryBuilder<T>
+  updateQuery(include_deleted?: boolean): UpdateQuery
+  deleteQuery(include_deleted?: boolean): DeleteQuery
+  loadRelations(objects: T[], relations?: string[] | null): Promise<T[]>
+  find(id: unknown, include_deleted?: boolean): Promise<T | null>
+  all(include_deleted?: boolean): Promise<T[]>
 }
 
 export type OrderFieldObject = {
@@ -66,6 +108,7 @@ export type OrderSpec = Record<string, boolean | string | OrderFieldObject>
 export type SelectFields = '*' | Array<string | number | FieldFunctionObject>
 
 export type SelectOptions = {
+  /** @deprecated Pass columns as the first argument to `selectColumns()` or `selectRow()` instead. */
   fields?: SelectFields
   limit?: number | null
   offset?: number
